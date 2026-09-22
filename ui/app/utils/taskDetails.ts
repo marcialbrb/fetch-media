@@ -1,3 +1,12 @@
+import type { StoreItem } from '~/types/store';
+
+type TaskSource = Pick<StoreItem['extras'], 'source_id'>;
+
+export const taskSourceUrl = (source: TaskSource | null | undefined): string => {
+  const id = Number(source?.source_id);
+  return Number.isSafeInteger(id) && id > 0 ? `/tasks/${id}` : '';
+};
+
 export const taskHistoryUrl = (
   type: 'queue' | 'done',
   sourceId: number,

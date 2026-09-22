@@ -350,11 +350,35 @@
                                   {{ formatTime(item.extras.duration) }}
                                 </p>
 
-                                <p v-if="getItemPath(item)" class="text-xs text-toned" dir="ltr">
+                                <p
+                                  v-if="getItemTaskUrl(item)"
+                                  class="flex flex-wrap items-baseline gap-x-1 text-xs text-toned"
+                                >
+                                  <span class="font-semibold text-default">{{ t('tasks.task') }}:</span>
+                                  <NuxtLink
+                                    :to="getItemTaskUrl(item)"
+                                    class="hover:text-highlighted hover:underline"
+                                  >
+                                    {{ item.extras.source_name || `#${item.extras.source_id}` }}
+                                  </NuxtLink>
+                                </p>
+
+                                <p
+                                  v-if="getItemPath(item)"
+                                  class="flex flex-wrap items-baseline gap-x-1 text-xs text-toned"
+                                  dir="ltr"
+                                >
                                   <span class="font-semibold text-default">{{
                                     t('queue.path')
                                   }}</span>
-                                  {{ getItemPath(item) }}
+                                  <NuxtLink
+                                    v-if="getItemBrowserUrl(item)"
+                                    :to="getItemBrowserUrl(item)"
+                                    class="hover:text-highlighted hover:underline"
+                                  >
+                                    {{ getItemPath(item) }}
+                                  </NuxtLink>
+                                  <span v-else>{{ getItemPath(item) }}</span>
                                 </p>
                               </div>
 
@@ -535,9 +559,33 @@
                               }}</UBadge>
                             </div>
 
-                            <p v-if="getItemPath(item)" class="text-xs text-toned" dir="ltr">
+                            <p
+                              v-if="getItemTaskUrl(item)"
+                              class="flex flex-wrap items-baseline gap-x-1 text-xs text-toned"
+                            >
+                              <span class="font-semibold text-default">{{ t('tasks.task') }}:</span>
+                              <NuxtLink
+                                :to="getItemTaskUrl(item)"
+                                class="hover:text-highlighted hover:underline"
+                              >
+                                {{ item.extras.source_name || `#${item.extras.source_id}` }}
+                              </NuxtLink>
+                            </p>
+
+                            <p
+                              v-if="getItemPath(item)"
+                              class="flex flex-wrap items-baseline gap-x-1 text-xs text-toned"
+                              dir="ltr"
+                            >
                               <span class="font-semibold text-default">{{ t('queue.path') }}</span>
-                              {{ getItemPath(item) }}
+                              <NuxtLink
+                                v-if="getItemBrowserUrl(item)"
+                                :to="getItemBrowserUrl(item)"
+                                class="hover:text-highlighted hover:underline"
+                              >
+                                {{ getItemPath(item) }}
+                              </NuxtLink>
+                              <span v-else>{{ getItemPath(item) }}</span>
                             </p>
                           </div>
 
@@ -832,6 +880,7 @@ import {
   deepIncludes,
   formatBytes,
   formatTime,
+  getBrowserUrl,
   getImage,
   getPath,
   request,
@@ -843,6 +892,7 @@ import { usePageShell } from '~/composables/usePageShell';
 import { useFormHandoff } from '~/composables/useFormHandoff';
 import { isShareTarget, parseShareUrls, removeShareQuery } from '~/composables/useShareTarget';
 import { useRangeSelection } from '~/composables/useRangeSelection';
+import { taskSourceUrl } from '~/utils/taskDetails';
 const { locale, t } = useI18n();
 
 const config = useYtpConfig();
@@ -1195,6 +1245,9 @@ const toNewDownload = async (item: download_form_item | Partial<StoreItem>): Pro
 };
 
 const getItemPath = (item: StoreItem): string => getPath(config.app.download_path, item) || '';
+const getItemBrowserUrl = (item: StoreItem): string =>
+  getBrowserUrl(config.app.download_path, item);
+const getItemTaskUrl = (item: StoreItem): string => taskSourceUrl(item.extras);
 const getListImage = (item: StoreItem): string =>
   getImage(config.app.download_path, item, false) || '';
 const getGridImage = (item: StoreItem): string => getImage(config.app.download_path, item) || '';
