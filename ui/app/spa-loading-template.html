@@ -3,33 +3,39 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0f172a" />
-    <title>Loading | YTPTube</title>
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F5F0E6" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#2B2624" />
+    <title>Fetch Media</title>
     <style>
       :root {
         color-scheme: light dark;
-        --bg: #edf2f9;
-        --bg-deep: #dbe5f1;
-        --panel: rgb(255 255 255 / 0.84);
-        --border: rgb(15 23 42 / 0.1);
-        --shadow: rgb(15 23 42 / 0.14);
-        --text: #0f172a;
-        --muted: #5b6b80;
-        --accent: #dc2626;
-        --accent-soft: rgb(220 38 38 / 0.18);
+        /* Paleta del proyecto (IDEA.md), en sincronía con app/assets/css/tailwind.css */
+        --bg: #f5f0e6;
+        --bg-deep: #efe7d8;
+        --panel: rgb(251 248 241 / 0.86);
+        --border: rgb(74 53 37 / 0.14);
+        --shadow: rgb(74 53 37 / 0.16);
+        --text: #4a3525;
+        --muted: #886446;
+        --accent: #ff8f30;
+        --accent-soft: rgb(255 143 48 / 0.16);
+        --grid: rgb(74 53 37 / 0.05);
+        --track: rgb(74 53 37 / 0.14);
       }
 
       @media (prefers-color-scheme: dark) {
         :root {
-          --bg: #08111d;
-          --bg-deep: #0f172a;
-          --panel: rgb(15 23 42 / 0.84);
-          --border: rgb(148 163 184 / 0.16);
-          --shadow: rgb(2 6 23 / 0.45);
-          --text: #e7eef9;
-          --muted: #9fb0c7;
-          --accent: #f87171;
-          --accent-soft: rgb(248 113 113 / 0.18);
+          --bg: #2b2624;
+          --bg-deep: #221e1c;
+          --panel: rgb(64 57 53 / 0.78);
+          --border: rgb(230 223 213 / 0.14);
+          --shadow: rgb(0 0 0 / 0.45);
+          --text: #e6dfd5;
+          --muted: #b0a79c;
+          --accent: #f2b134;
+          --accent-soft: rgb(242 177 52 / 0.14);
+          --grid: rgb(230 223 213 / 0.045);
+          --track: rgb(230 223 213 / 0.16);
         }
       }
 
@@ -53,13 +59,14 @@
         color: var(--text);
         user-select: none;
         font-family:
+          'Noto Sans',
           system-ui,
           -apple-system,
           BlinkMacSystemFont,
           'Segoe UI',
           sans-serif;
         background:
-          radial-gradient(circle at top left, var(--accent-soft), transparent 24%),
+          radial-gradient(circle at 12% -6%, var(--accent-soft), transparent 32%),
           linear-gradient(180deg, var(--bg-deep), var(--bg));
       }
 
@@ -69,19 +76,20 @@
         inset: 0;
         pointer-events: none;
         background:
-          linear-gradient(rgb(255 255 255 / 0.035) 1px, transparent 1px),
-          linear-gradient(90deg, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+          linear-gradient(var(--grid) 1px, transparent 1px),
+          linear-gradient(90deg, var(--grid) 1px, transparent 1px);
         background-size: 2rem 2rem;
-        opacity: 0.32;
+        opacity: 0.9;
       }
 
       .loading-card {
-        min-width: 400px;
+        /* Sin min-width: a 390 px el mínimo de 400 px hacía que la tarjeta se saliera
+           de la pantalla. El ancho lo resuelve el width() de abajo. */
         width: min(100%, 29rem);
         position: relative;
         padding: 1.65rem;
         border: 1px solid var(--border);
-        border-radius: 1.1rem;
+        border-radius: 0.5rem;
         background: var(--panel);
         box-shadow: 0 1rem 2.5rem var(--shadow);
         backdrop-filter: blur(16px);
@@ -94,11 +102,12 @@
       }
 
       .brand img {
-        width: 2.8rem;
-        height: 2.8rem;
+        width: 4.2rem;
+        height: 4.2rem;
         flex: none;
         display: block;
         object-fit: contain;
+        filter: drop-shadow(0 0.6rem 1.1rem var(--shadow));
       }
 
       .brand-copy {
@@ -116,10 +125,11 @@
 
       h1 {
         margin: 0.35rem 0 0;
-        font-size: 1.55rem;
-        line-height: 1.1;
-        letter-spacing: -0.02em;
-        font-weight: 700;
+        font-size: 1.6rem;
+        line-height: 1.15;
+        letter-spacing: -0.01em;
+        font-weight: 600;
+        font-family: Fraunces, ui-serif, Georgia, 'Times New Roman', serif;
       }
 
       .description {
@@ -134,7 +144,7 @@
         height: 0.32rem;
         overflow: hidden;
         border-radius: 999px;
-        background: rgb(148 163 184 / 0.22);
+        background: var(--track);
       }
 
       .loader::before {
@@ -196,10 +206,13 @@
   <body>
     <main class="loading-card" role="status" aria-live="polite" aria-busy="true">
       <div class="brand">
-        <img src="/images/favicon.png" alt="" aria-hidden="true" />
+        <picture>
+          <source srcset="/images/hero-night.png" media="(prefers-color-scheme: dark)" />
+          <img src="/images/hero-day.png" alt="" aria-hidden="true" />
+        </picture>
 
         <div class="brand-copy">
-          <p class="label">YTPTube</p>
+          <p class="label">Fetch Media</p>
           <h1>Loading App</h1>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 
 import {
+  ADVANCED_PATH,
   SIMPLE_PATH,
   isSimple,
   modeFromPref,
@@ -36,9 +37,12 @@ describe('useMode', () => {
   });
 
   it('route', () => {
-    expect(routeTarget('/', null, true)).toBe(SIMPLE_PATH);
-    expect(routeTarget('/', false, true)).toBeNull();
+    // '/' es el modo simple y '/advanced' el avanzado: cada uno redirige al otro sólo si
+    // el modo resuelto no coincide con la URL.
+    expect(routeTarget('/', null, true)).toBeNull();
+    expect(routeTarget('/', null, false)).toBe(ADVANCED_PATH);
+    expect(routeTarget(ADVANCED_PATH, null, true)).toBe(SIMPLE_PATH);
+    expect(routeTarget(ADVANCED_PATH, null, false)).toBeNull();
     expect(routeTarget('/history', null, true)).toBeNull();
-    expect(routeTarget(SIMPLE_PATH, null, false)).toBeNull();
   });
 });

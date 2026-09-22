@@ -1,10 +1,13 @@
 export default defineAppConfig({
   ui: {
-    primary: 'indigo',
+    // Los nombres de color de acá abajo son sólo el punto de partida: la paleta real
+    // (día/noche) vive en app/assets/css/tailwind.css y sobreescribe los tokens
+    // --ui-color-* y los semánticos (--ui-bg, --ui-text, --ui-primary, ...).
+    primary: 'orange',
     colors: {
-      primary: 'indigo',
-      secondary: 'amber',
-      success: 'emerald',
+      primary: 'orange',
+      secondary: 'stone',
+      success: 'green',
       neutral: 'stone',
     },
     formField: {
@@ -49,6 +52,11 @@ export default defineAppConfig({
     },
     button: {
       compoundVariants: [
+        {
+          color: 'primary',
+          variant: 'solid',
+          class: 'text-[var(--ytp-cta-ink)]',
+        },
         {
           color: 'neutral',
           variant: 'outline',

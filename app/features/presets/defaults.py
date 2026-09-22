@@ -4,7 +4,7 @@ DEFAULT_PRESET_UPDATED_AT: datetime = datetime(2026, 8, 24, tzinfo=UTC)
 
 DEFAULT_PRESETS: list[dict[str, object]] = [
     {
-        "name": "default",
+        "name": "Default",
         "default": True,
         "cli": "--socket-timeout 30 --download-archive %(archive_file)s",
         "description": "Downloads the best video and audio quality selected by yt-dlp.",
@@ -15,7 +15,7 @@ DEFAULT_PRESETS: list[dict[str, object]] = [
         "updated_at": DEFAULT_PRESET_UPDATED_AT,
     },
     {
-        "name": "mobile",
+        "name": "Mobile",
         "cli": '--socket-timeout 30 --download-archive %(archive_file)s\n-t mp4 --merge-output-format mp4 --add-chapters --remux-video mp4 \n--embed-metadata --embed-thumbnail \n--postprocessor-args "-movflags +faststart"',
         "default": True,
         "description": "Downloads the best video and audio quality in MP4, then adds chapters, metadata, and a thumbnail for mobile devices.",
@@ -48,7 +48,7 @@ DEFAULT_PRESETS: list[dict[str, object]] = [
         "updated_at": DEFAULT_PRESET_UPDATED_AT,
     },
     {
-        "name": "audio_only",
+        "name": "Audio Only",
         "cli": "--socket-timeout 30 --download-archive %(archive_file)s\n--extract-audio --add-chapters --embed-metadata --embed-thumbnail --format 'bestaudio/best'",
         "default": True,
         "description": "Downloads audio only, then adds chapters, metadata, and a thumbnail.",
@@ -59,7 +59,7 @@ DEFAULT_PRESETS: list[dict[str, object]] = [
         "updated_at": DEFAULT_PRESET_UPDATED_AT,
     },
     {
-        "name": "info_reader_plugin",
+        "name": "Info-Reader Plugin",
         "description": "Uses a predictable filename layout and metadata for yt-dlp info-reader plugins in Jellyfin, Emby, Plex, and WatchState.",
         "folder": "",
         "template": "%(channel)s [%(channel_id|Unknown_id)s]/Season %(release_date>%Y,upload_date>%Y|Unknown)s/%(release_date>%Y%m%d,upload_date>%Y%m%d)s - %(title).180B [%(id)s].%(ext)s",
@@ -70,7 +70,7 @@ DEFAULT_PRESETS: list[dict[str, object]] = [
         "updated_at": DEFAULT_PRESET_UPDATED_AT,
     },
     {
-        "name": "nfo_maker_tv",
+        "name": "NFO Maker TV",
         "description": "Generates a filename layout and metadata for Jellyfin, Emby, and Plex episodes.",
         "folder": "",
         "template": "%(channel)s [%(channel_id|Unknown_id)s]/Season %(release_date>%Y,upload_date>%Y|Unknown)s/S%(release_date>%Y,upload_date>%Y)sE%(release_date>%m%d,upload_date>%m%d)s - %(title).100B [%(id)s].%(ext)s",
@@ -81,7 +81,7 @@ DEFAULT_PRESETS: list[dict[str, object]] = [
         "updated_at": DEFAULT_PRESET_UPDATED_AT,
     },
     {
-        "name": "nfo_maker_movie",
+        "name": "NFO Maker Movie",
         "description": "Generates a filename layout and metadata for Jellyfin, Emby, and Plex movies.",
         "folder": "",
         "template": "%(channel)s [%(channel_id|Unknown_id)s]/Season %(release_date>%Y,upload_date>%Y|Unknown)s/S%(release_date>%Y,upload_date>%Y)sE%(release_date>%m%d,upload_date>%m%d)s - %(title).100B [%(id)s].%(ext)s",
@@ -92,7 +92,7 @@ DEFAULT_PRESETS: list[dict[str, object]] = [
         "updated_at": DEFAULT_PRESET_UPDATED_AT,
     },
     {
-        "name": "generic_browser",
+        "name": "Generic Browser",
         "default": True,
         "cli": '--socket-timeout 30 --download-archive %(archive_file)s --use-extractors "generic"',
         "description": "Use the bundled generic browser extractor with the endpoint configured by YTP_BROWSER_URL.",

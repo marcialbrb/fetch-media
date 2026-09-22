@@ -21,6 +21,17 @@ try {
         '/api/': {
           target: API_URL,
           changeOrigin: true,
+          // Sólo en desarrollo. El backend responde 403 "Origin is not allowed." a todo
+          // pedido cuyo Origin no coincida con el Host que él ve (app/features/auth/
+          // middleware.py). changeOrigin reescribe el Host a localhost:8081, pero el
+          // Origin sigue siendo el del cliente: localhost:8082 en la PC (pasa) y
+          // 192.168.x.x:8082 en el celular (rechazado). Estos dos headers normalizan
+          // el salto del proxy para cualquier cliente de la LAN.
+          // En producción no hace falta: el backend sirve el frontend y todo es mismo origen.
+          headers: {
+            Origin: new URL(API_URL).origin,
+            'Sec-Fetch-Site': 'same-origin',
+          },
         },
       },
     };
@@ -55,24 +66,38 @@ export default defineNuxtConfig({
     head: {
       meta: [
         { charset: 'utf-8' },
-        { name: 'viewport', content: 'width=device-width, initial-scale=1.0, maximum-scale=1.0' },
-        { name: 'theme-color', content: '#020817' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { name: 'theme-color', media: '(prefers-color-scheme: light)', content: '#F5F0E6' },
+        { name: 'theme-color', media: '(prefers-color-scheme: dark)', content: '#2B2624' },
         { name: 'mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
-        { name: 'apple-mobile-web-app-title', content: 'YTPTube' },
+        { name: 'apple-mobile-web-app-title', content: 'Fetch Media' },
       ],
       base: { href: '/' },
       link: [
         { rel: 'icon', type: 'image/x-icon', href: `favicon.ico?v=${faviconHash}` },
         { rel: 'manifest', href: 'manifest.webmanifest?v=100' },
-        { rel: 'apple-touch-icon', sizes: '1024x1024', href: `apple-touch-icon.${appleIconHash}.png` },
+        {
+          rel: 'apple-touch-icon',
+          sizes: '1024x1024',
+          href: `apple-touch-icon.${appleIconHash}.png`,
+        },
         { rel: 'apple-touch-startup-image', href: 'images/logo.png' },
       ],
     },
     pageTransition: { name: 'page', mode: 'out-in' },
   },
   modules: ['./modules/icon-catalog', '@nuxt/ui', '@vueuse/nuxt', '@nuxt/eslint', '@nuxtjs/i18n'],
+
+  // Tipografías del proyecto (IDEA.md): titulares serif, cuerpo Noto Sans.
+  // @nuxt/fonts las baja en build/dev y las self-hostea (el deploy no depende de Google).
+  fonts: {
+    families: [
+      { name: 'Noto Sans', provider: 'google', weights: [400, 500, 600, 700] },
+      { name: 'Fraunces', provider: 'google', weights: [500, 600, 700] },
+    ],
+  },
 
   i18n: {
     compilation: {
@@ -88,6 +113,13 @@ export default defineNuxtConfig({
         name: 'English',
         language: 'en',
         file: 'en.json',
+        dir: 'ltr',
+      },
+      {
+        code: 'es',
+        name: 'Español',
+        language: 'es',
+        file: 'es.json',
         dir: 'ltr',
       },
       {
@@ -144,6 +176,10 @@ export default defineNuxtConfig({
         ],
       },
     },
+  },
+  // La vieja URL del modo simple sigue funcionando.
+  routeRules: {
+    '/simple': { redirect: '/' },
   },
   nitro: {
     sourceMap: false === isProd,

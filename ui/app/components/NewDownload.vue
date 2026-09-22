@@ -14,7 +14,16 @@
               </div>
             </template>
             <template #description>
-              <span>{{
+              <!-- Mientras se encola hay salida visible: antes no había ninguna señal de
+                   que la descarga se estuviera procesando. -->
+              <span
+                v-if="addInProgress || recentlyQueued"
+                class="inline-flex items-center gap-1.5 text-primary"
+              >
+                <UIcon name="i-lucide-loader-circle" class="size-3.5 animate-spin" />
+                {{ t('queue.preparing') }}
+              </span>
+              <span v-else>{{
                 t('common.urlsSeparatedBy', { separator: getSeparatorsName(separator) })
               }}</span>
             </template>
@@ -231,7 +240,10 @@
       <div v-if="showAdvanced" class="ytp-card p-4 sm:p-6 space-y-4">
         <div class="space-y-4">
           <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-12">
-            <div class="xl:col-span-2">
+            <!-- Cada toggle ocupa 4/12: a 2/12 las etiquetas se cortaban en >=1280
+                 ("Forzar desca…", "Inicio autom…"). Con 4+4+4 la fila se llena y los
+                 campos siguientes bajan solos. -->
+            <div class="xl:col-span-4">
               <DLInput
                 id="force_download"
                 v-model="dlFields['--no-download-archive']"
@@ -243,7 +255,7 @@
               />
             </div>
 
-            <div class="xl:col-span-2">
+            <div class="xl:col-span-4">
               <DLInput
                 id="auto_start"
                 v-model="auto_start"
@@ -255,7 +267,7 @@
               />
             </div>
 
-            <div class="xl:col-span-2">
+            <div class="xl:col-span-4">
               <DLInput
                 id="no_cache"
                 v-model="dlFields['--no-continue']"
@@ -604,7 +616,7 @@ const { t } = useI18n();
 const props = defineProps<{ item?: Partial<download_form_item> }>();
 const emitter = defineEmits<{
   (e: 'getInfo', url: string, preset: string | undefined, cli: string | undefined): void;
-  (e: 'clear_form'): void;
+  (e: 'clear_form' | 'queued'): void;
 }>();
 const config = useYtpConfig();
 const toast = useNotification();
@@ -622,6 +634,27 @@ const storedCommand = useStorage<string>('console_command', '');
 const testResultsClasses = useStorage<string>('modal_text_classes', '');
 
 const addInProgress = ref<boolean>(false);
+
+// El POST de encolado vuelve en milisegundos y los items aparecen en la cola un rato
+// después: sin esto el aviso "Preparando…" no llegaba a verse nunca.
+const recentlyQueued = ref(false);
+let recentlyQueuedTimer: ReturnType<typeof setTimeout> | undefined;
+
+watch(addInProgress, (running) => {
+  if (!running) {
+    return;
+  }
+
+  // Avisa a la página para que muestre la tarjeta fantasma en la cola: hay links que
+  // se descargan tan rápido que si no, no se ve que entraron.
+  emitter('queued');
+
+  recentlyQueued.value = true;
+  clearTimeout(recentlyQueuedTimer);
+  recentlyQueuedTimer = setTimeout(() => {
+    recentlyQueued.value = false;
+  }, 6000);
+});
 const scheduleInProgress = ref(false);
 const submitError = ref('');
 const showOptions = ref<boolean>(false);
@@ -802,6 +835,18 @@ const form = useStorage<item_request>('local_config_v1', {
 }) as Ref<item_request>;
 
 const presetItems = computed(() => selectItems.value);
+
+/**
+ * Todo el formulario vive en localStorage (`local_config_v1`), así que al recargar
+ * la página volvían a aparecer la URL y la ruta de descarga que habían quedado
+ * escritas sin enviarse. Se limpian al montar: el resto de los ajustes (preset,
+ * separador, opciones) sigue recordándose. En `onMounted` y no en el setup para no
+ * pisar una URL que llegue por el flujo de "compartir".
+ */
+onMounted(() => {
+  form.value.url = '';
+  form.value.folder = '';
+});
 const ignoreConditionOptions = computed(() =>
   buildIgnoreConditionOptions(
     conditions.conditions.value,

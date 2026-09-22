@@ -1,878 +1,981 @@
 <template>
-  <div class="space-y-6">
-    <div class="ytp-page-header">
-      <div class="ytp-page-heading">
-        <span class="ytp-page-icon">
-          <UIcon :name="pageShell.icon" class="size-5" />
-        </span>
+  <div>
+    <AppRoot mode="simple" @ready="init" v-slot="{ openSettings }">
+      <Shutdown v-if="app_shutdown" />
 
-        <div class="min-w-0 space-y-2">
-          <div class="ytp-page-kicker">
-            <span>{{ pageShell.sectionLabel }}</span>
-            <span>/</span>
-            <span>{{ pageShell.pageLabel }}</span>
-          </div>
-
-          <p class="max-w-3xl text-sm text-toned">{{ pageShell.description }}</p>
-        </div>
-      </div>
-
-      <div class="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:justify-end">
-        <UButton
-          color="neutral"
-          :variant="toggleFilter ? 'soft' : 'outline'"
-          size="sm"
-          icon="i-lucide-filter"
-          @click="
-            () => {
-              toggleFilter = !toggleFilter;
-            }
-          "
-        >
-          <span>{{ t('common.filter') }}</span>
-        </UButton>
-
-        <UButton
-          v-if="false === config.paused"
-          color="neutral"
-          variant="outline"
-          size="sm"
-          icon="i-lucide-pause"
-          @click="() => pauseDownload()"
-        >
-          <span>{{ t('common.pause') }}</span>
-        </UButton>
-
-        <UButton
-          v-else
-          color="primary"
-          variant="solid"
-          size="sm"
-          icon="i-lucide-play"
-          @click="() => resumeDownload()"
-        >
-          <span>{{ t('common.resume') }}</span>
-        </UButton>
-
-        <UButton
-          color="neutral"
-          :variant="config.showForm ? 'soft' : 'outline'"
-          size="sm"
-          icon="i-lucide-plus"
-          @click="
-            () => {
-              config.showForm = !config.showForm;
-            }
-          "
-        >
-          <span>{{ t('common.add') }}</span>
-        </UButton>
-
-        <UButton
-          color="neutral"
-          variant="outline"
-          size="sm"
-          :icon="display_style === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
-          class="hidden sm:inline-flex"
-          @click="changeDisplay"
-        >
-          <span class="hidden sm:inline">{{
-            display_style === 'list' ? t('common.list') : t('common.grid')
-          }}</span>
-        </UButton>
-
-        <UButton
-          v-if="socket.connectionStatus !== 'connected'"
-          color="neutral"
-          variant="outline"
-          size="sm"
-          icon="i-lucide-refresh-cw"
-          :loading="isRefreshing"
-          :disabled="isRefreshing"
-          @click="() => refreshQueue()"
-        >
-          <span>{{ t('common.refresh') }}</span>
-        </UButton>
-
-        <UInput
-          v-if="toggleFilter"
-          id="filter"
-          v-model.lazy="query"
-          type="search"
-          :placeholder="t('common.filterDisplayedContent')"
-          icon="i-lucide-filter"
-          size="sm"
-          class="order-last w-full sm:order-first sm:w-80"
-        />
-      </div>
-    </div>
-
-    <div v-if="config.showForm" ref="formSection" class="page-form-wrap scroll-mt-24">
-      <LazyNewDownload
-        :item="item_form"
-        @clear_form="item_form = {}"
-        @getInfo="
-          (url: string, preset: string = '', cli: string = '') => view_info(url, false, preset, cli)
-        "
-      />
-    </div>
-
-    <UEmpty
-      v-if="!hasQueueContent"
-      icon="i-lucide-triangle-alert"
-      :title="t('queue.empty')"
-      class="rounded-lg border border-dashed border-default bg-muted/10 py-10"
-    />
-
-    <section v-else id="queue" class="scroll-mt-24 space-y-4">
-      <div class="w-full min-w-0 max-w-full space-y-4">
+      <div v-else class="flex min-h-0 flex-1 flex-col">
         <div
-          v-if="hasItems"
-          class="flex flex-wrap items-center justify-between gap-3 ytp-card px-3 py-3"
+          class="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col gap-4 px-3 py-4 sm:px-4 sm:py-5"
         >
-          <div class="flex flex-wrap items-center gap-2">
-            <UButton
-              color="neutral"
-              variant="outline"
-              size="sm"
-              :icon="masterSelectAll ? 'i-lucide-square' : 'i-lucide-square-check-big'"
-              @click="toggleMasterSelection"
-            >
-              {{ masterSelectAll ? t('common.unselect') : t('common.select') }}
-            </UButton>
+          <div
+            class="pointer-events-none fixed inset-0 z-20 bg-black/45 backdrop-blur-[1px] transition-all duration-500 ease-out"
+            :class="lightsOut ? 'opacity-100' : 'opacity-0'"
+            aria-hidden="true"
+          />
 
-            <UBadge v-if="selectedElms.length > 0" color="error" variant="soft" size="sm">
-              {{ selectedElms.length }}
-            </UBadge>
+          <div class="hero-stage relative flex w-full flex-col items-center">
+            <div
+              class="hero-reserve-top"
+              :class="showSections ? 'h-0 is-docked' : 'h-[calc(var(--hero-lg)+var(--hero-gap))]'"
+              aria-hidden="true"
+            />
 
-            <UDropdownMenu :items="bulkActionGroups" :modal="false">
-              <UButton
-                color="neutral"
-                variant="outline"
-                size="sm"
-                icon="i-lucide-list"
-                trailing-icon="i-lucide-chevron-down"
+            <div class="hero-top w-full" :class="showSections ? 'is-docked' : ''">
+              <div
+                class="hero-form mx-auto w-full transition-all duration-300"
+                :class="formContainerClass"
               >
-                {{ t('common.actions') }}
-              </UButton>
-            </UDropdownMenu>
-          </div>
-
-          <div class="flex flex-wrap items-center gap-2">
-            <UBadge color="neutral" variant="soft" size="sm">
-              <span class="inline-flex items-center gap-1.5">
-                <UIcon name="i-lucide-list-ordered" class="size-3.5" />
-                <span>{{ queueCountLabel }}</span>
-              </span>
-            </UBadge>
-
-            <UButton
-              v-if="stateStore.hasMore()"
-              color="neutral"
-              variant="outline"
-              size="sm"
-              :loading="isRefreshing"
-              @click="() => loadMoreQueue()"
-            >
-              {{ t('common.showMore') }}
-            </UButton>
-          </div>
-        </div>
-
-        <div
-          v-if="'list' === contentStyle && hasItems"
-          class="w-full min-w-0 max-w-full overflow-hidden ytp-table-surface"
-        >
-          <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
-            <table class="min-w-210 table-fixed w-full text-sm">
-              <thead class="bg-elevated/60 text-xs uppercase tracking-wide text-toned">
-                <tr
-                  class="text-center [&>th]:border-e [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-e-0"
-                >
-                  <th class="w-12">
-                    <button
-                      type="button"
-                      class="cursor-pointer"
-                      :aria-label="
-                        masterSelectAll ? t('common.unselectAll') : t('common.selectAll')
-                      "
-                      @click="toggleMasterSelection"
+                <div class="ytp-card p-4 sm:p-5">
+                  <div class="flex min-w-0 items-center gap-3 sm:gap-4">
+                    <form
+                      autocomplete="off"
+                      class="min-w-0 flex-1 space-y-4"
+                      @submit.prevent="addDownload"
                     >
-                      <UIcon
-                        :name="masterSelectAll ? 'i-lucide-square' : 'i-lucide-square-check-big'"
-                        class="size-4"
-                      />
-                    </button>
-                  </th>
-                  <th class="w-full text-start">{{ t('queue.videoTitle') }}</th>
-                  <th class="w-56">{{ t('queue.progress') }}</th>
-                  <th class="w-32 whitespace-nowrap">{{ t('common.status') }}</th>
-                  <th class="w-36 whitespace-nowrap">{{ t('common.created') }}</th>
-                  <th class="w-80 whitespace-nowrap">{{ t('common.actions') }}</th>
-                </tr>
-              </thead>
-
-              <tbody class="divide-y divide-default">
-                <tr
-                  v-for="item in displayedItems"
-                  :key="item._id"
-                  class="align-top transition-colors hover:bg-elevated/70 [&>td]:border-e [&>td]:border-default/60 [&>td:last-child]:border-e-0"
-                >
-                  <td class="border-e border-default/60 px-3 py-3 text-center align-top">
-                    <label class="inline-flex cursor-pointer items-center justify-center">
-                      <input
-                        :id="`checkbox-${item._id}`"
-                        v-model="selectedElms"
-                        class="completed-checkbox size-4 rounded border-default"
-                        type="checkbox"
-                        :value="item._id"
-                        @click="rangeSelection.handleClick"
-                        @keydown="rangeSelection.handleKeydown"
-                        @change="rangeSelection.handleChange(item._id, $event)"
-                      />
-                    </label>
-                  </td>
-
-                  <td class="border-e border-default/60 px-3 py-3 align-top">
-                    <div class="flex items-start justify-between gap-3">
-                      <div class="min-w-0 flex-1">
-                        <UTooltip :text="`[${item.preset}] - ${item.title}`">
-                          <div class="truncate font-medium text-highlighted">
-                            <a target="_blank" :href="item.url" class="hover:underline">
-                              {{ item.title }}
-                            </a>
-                          </div>
-                        </UTooltip>
+                      <FormSubmitError :message="submitError" @dismiss="submitError = ''" />
+                      <div class="min-w-0 space-y-1">
+                        <div
+                          class="flex items-center gap-2 text-base font-semibold text-highlighted"
+                        >
+                          <UIcon name="i-lucide-link" class="size-4 shrink-0 text-toned" />
+                          <span class="font-serif text-lg leading-snug">
+                            {{ isMobile ? t('simple.mobileTitle') : greetingMessage }}
+                          </span>
+                        </div>
                       </div>
 
-                      <div
-                        v-if="item.downloaded_bytes || show_popover"
-                        class="flex shrink-0 items-center gap-2"
-                      >
-                        <UBadge
-                          v-if="item.downloaded_bytes"
-                          color="neutral"
-                          variant="soft"
-                          size="sm"
-                        >
-                          {{ formatBytes(item.downloaded_bytes, 2, t) }}
-                        </UBadge>
-
-                        <UBadge
-                          v-if="item.extras?.retry_attempt && item.extras.retry_attempt > 1"
-                          color="warning"
-                          variant="soft"
-                          size="sm"
-                          icon="i-lucide-rotate-cw"
-                        >
-                          {{ t('common.retryCount', { count: item.extras.retry_attempt }) }}
-                        </UBadge>
-
-                        <UPopover
-                          v-if="show_popover"
-                          :content="{ side: 'bottom', align: 'end', sideOffset: 8 }"
+                      <div class="flex items-stretch gap-2">
+                        <UTooltip
+                          :text="showExtras ? t('common.hideOptions') : t('common.showOptions')"
                         >
                           <UButton
+                            type="button"
                             color="neutral"
-                            variant="ghost"
-                            size="xs"
-                            icon="i-lucide-info"
-                            square
+                            :variant="showExtras ? 'soft' : 'outline'"
+                            size="lg"
+                            :icon="showExtras ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+                            class="shrink-0 justify-center w-12"
+                            :disabled="addInProgress"
+                            @click="
+                              () => {
+                                showExtras = !showExtras;
+                              }
+                            "
+                          />
+                        </UTooltip>
+
+                        <UFieldGroup size="lg" class="min-w-0 flex-1">
+                          <UInput
+                            id="download-url"
+                            dir="ltr"
+                            v-model="formUrl"
+                            type="url"
+                            :placeholder="t('common.urlPlaceholder')"
+                            required
+                            :disabled="isFormDisabled"
+                            class="min-w-0 flex-1"
+                            :ui="urlInputUi"
                           />
 
-                          <template #content>
-                            <UCard class="max-w-112.5" :ui="{ body: 'space-y-3 p-4' }">
-                              <div class="space-y-2">
-                                <div class="flex flex-wrap items-center gap-2">
-                                  <p class="text-sm font-semibold text-highlighted">
-                                    {{ item.title }}
-                                  </p>
-                                  <UBadge color="info" variant="soft" size="sm">{{
-                                    item.preset
-                                  }}</UBadge>
-                                </div>
-
-                                <p v-if="item.extras?.duration" class="text-xs text-toned">
-                                  <span class="font-semibold text-default">{{
-                                    t('queue.duration')
-                                  }}</span>
-                                  {{ formatTime(item.extras.duration) }}
-                                </p>
-
-                                <p v-if="getItemPath(item)" class="text-xs text-toned" dir="ltr">
-                                  <span class="font-semibold text-default">{{
-                                    t('queue.path')
-                                  }}</span>
-                                  {{ getItemPath(item) }}
-                                </p>
-                              </div>
-
-                              <img
-                                v-if="showThumbnails && getListImage(item)"
-                                :src="getListImage(item)"
-                                class="max-h-56 w-full rounded-md object-cover"
-                              />
-
-                              <div
-                                v-if="item.description"
-                                class="max-h-40 overflow-y-auto rounded-md border border-default bg-muted/20 px-3 py-2 text-sm text-default"
-                              >
-                                {{ item.description }}
-                              </div>
-                            </UCard>
-                          </template>
-                        </UPopover>
-                      </div>
-                    </div>
-                  </td>
-
-                  <td class="w-56 border-e border-default/60 px-3 py-3 align-top">
-                    <div
-                      class="queue-progress queue-progress--compact w-full rounded-md border border-default bg-muted/20"
-                    >
-                      <div
-                        class="queue-progress__bar bg-success/35"
-                        :style="{ width: progressWidth(item) }"
-                      ></div>
-                      <div class="queue-progress__label">
-                        <template v-if="progressIcon(item)">
-                          <UIcon
-                            :name="progressIcon(item)"
-                            :class="[
-                              'me-1 size-4',
-                              ['i-lucide-settings-2', 'i-lucide-loader-circle'].includes(
-                                progressIcon(item),
-                              )
-                                ? 'animate-spin'
-                                : '',
-                            ]"
-                          />
-                        </template>
-                        <span>{{ progressText(item) }}</span>
-                      </div>
-                    </div>
-                  </td>
-
-                  <td class="border-e border-default/60 px-3 py-3 text-center align-top text-sm">
-                    <div class="inline-flex items-center gap-2 text-default whitespace-nowrap">
-                      <span class="inline-flex items-center">
-                        <UIcon
-                          :name="setIcon(item)"
-                          :class="[setIconColor(item), setIconAnimation(item), 'size-4 shrink-0']"
-                        />
-                      </span>
-                      <span>{{ setStatus(item) }}</span>
-                    </div>
-                  </td>
-
-                  <td
-                    class="border-e border-default/60 px-3 py-3 text-center align-top text-sm text-toned whitespace-nowrap"
-                  >
-                    <UTooltip :text="formatLongDateTime(item.datetime, locale)">
-                      <span :data-datetime="item.datetime" v-rtime="item.datetime" />
-                    </UTooltip>
-                  </td>
-
-                  <td class="w-80 px-3 py-3 align-top whitespace-nowrap">
-                    <div class="flex items-center justify-end gap-1">
-                      <UButton
-                        color="neutral"
-                        variant="outline"
-                        size="xs"
-                        icon="i-lucide-circle-off"
-                        @click="() => void confirmCancel(item)"
-                      >
-                        {{ item.is_live ? t('common.stopStream') : t('common.cancel') }}
-                      </UButton>
-
-                      <UButton
-                        v-if="canStartItem(item)"
-                        color="neutral"
-                        variant="outline"
-                        size="xs"
-                        icon="i-lucide-circle-play"
-                        @click="() => startItem(item)"
-                      >
-                        {{ t('common.start') }}
-                      </UButton>
-
-                      <UButton
-                        v-if="canPauseItem(item)"
-                        color="neutral"
-                        variant="outline"
-                        size="xs"
-                        icon="i-lucide-pause"
-                        @click="() => pauseItem(item)"
-                      >
-                        {{ t('common.pause') }}
-                      </UButton>
-
-                      <UDropdownMenu :items="itemActionGroups(item)" :modal="false">
-                        <UButton
-                          color="neutral"
-                          variant="outline"
-                          size="xs"
-                          icon="i-lucide-settings-2"
-                          trailing-icon="i-lucide-chevron-down"
-                        >
-                          {{ t('common.actions') }}
-                        </UButton>
-                      </UDropdownMenu>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div v-else-if="hasItems" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <LateLoader
-            v-for="item in displayedItems"
-            :key="item._id"
-            :unrender="true"
-            :min-height="showThumbnails ? 475 : 265"
-            class="min-h-0 min-w-0 w-full max-w-full"
-          >
-            <div class="ytp-card flex h-full min-w-0 w-full max-w-full flex-col overflow-hidden">
-              <div class="p-4 pb-3 ytp-border-bottom-soft">
-                <div class="flex min-w-0 flex-wrap items-start justify-between gap-3">
-                  <div class="min-w-0 flex-1">
-                    <UTooltip :text="item.title">
-                      <div class="min-w-0 text-sm font-semibold text-highlighted">
-                        <a target="_blank" :href="item.url" class="block truncate hover:underline">
-                          {{ item.title }}
-                        </a>
-                      </div>
-                    </UTooltip>
-                  </div>
-
-                  <div class="flex max-w-full flex-wrap items-center justify-end gap-1 sm:shrink-0">
-                    <UBadge v-if="item.extras?.duration" color="info" variant="soft" size="sm">
-                      {{ formatTime(item.extras.duration) }}
-                    </UBadge>
-
-                    <UBadge
-                      v-if="item.extras?.retry_attempt && item.extras.retry_attempt > 1"
-                      color="warning"
-                      variant="soft"
-                      size="sm"
-                      icon="i-lucide-rotate-cw"
-                    >
-                      {{ t('common.retryCount', { count: item.extras.retry_attempt }) }}
-                    </UBadge>
-
-                    <UPopover
-                      v-if="show_popover"
-                      :content="{ side: 'bottom', align: 'end', sideOffset: 8 }"
-                    >
-                      <UButton
-                        color="neutral"
-                        variant="ghost"
-                        size="xs"
-                        icon="i-lucide-info"
-                        square
-                      />
-
-                      <template #content>
-                        <UCard class="max-w-112.5" :ui="{ body: 'space-y-3 p-4' }">
-                          <div class="space-y-2">
-                            <div class="flex flex-wrap items-center gap-2">
-                              <p class="text-sm font-semibold text-highlighted">{{ item.title }}</p>
-                              <UBadge color="info" variant="soft" size="sm">{{
-                                item.preset
-                              }}</UBadge>
-                            </div>
-
-                            <p v-if="getItemPath(item)" class="text-xs text-toned" dir="ltr">
-                              <span class="font-semibold text-default">{{ t('queue.path') }}</span>
-                              {{ getItemPath(item) }}
-                            </p>
-                          </div>
-
-                          <div
-                            v-if="item.description"
-                            class="max-h-40 overflow-y-auto rounded-md border border-default bg-muted/20 px-3 py-2 text-sm text-default"
+                          <UButton
+                            type="submit"
+                            color="primary"
+                            icon="i-lucide-download"
+                            :loading="addInProgress"
+                            :disabled="isFormDisabled || !formUrl.trim()"
+                            :class="downloadButtonClass"
                           >
-                            {{ item.description }}
-                          </div>
-                        </UCard>
-                      </template>
-                    </UPopover>
+                            <span :class="downloadLabelClass">{{ t('common.download') }}</span>
+                          </UButton>
+                        </UFieldGroup>
+                      </div>
 
-                    <UButton
-                      v-if="show_thumbnail"
-                      color="neutral"
-                      variant="ghost"
-                      size="xs"
-                      :icon="hideThumbnail ? 'i-lucide-chevron-down' : 'i-lucide-chevron-up'"
-                      square
-                      @click="
-                        () => {
-                          hideThumbnail = !hideThumbnail;
-                        }
-                      "
-                    />
+                      <div v-if="showExtras" class="space-y-3 ytp-border-top-soft pt-4">
+                        <UFormField :label="t('common.presetLabel')" :ui="fieldUi" class="w-full">
+                          <template #label>
+                            <span class="inline-flex items-center gap-2 font-semibold">
+                              <UIcon name="i-lucide-sliders-horizontal" class="size-4 text-toned" />
+                              <span>{{ t('common.presetLabel') }}</span>
+                            </span>
+                          </template>
 
-                    <label class="inline-flex cursor-pointer items-center justify-center px-1">
-                      <input
-                        :id="`checkbox-${item._id}`"
-                        v-model="selectedElms"
-                        class="completed-checkbox size-4 rounded border-default"
-                        type="checkbox"
-                        :value="item._id"
-                        @click="rangeSelection.handleClick"
-                        @keydown="rangeSelection.handleKeydown"
-                        @change="rangeSelection.handleChange(item._id, $event)"
-                      />
-                    </label>
+                          <USelectMenu
+                            id="preset"
+                            v-model="formPreset"
+                            :items="presetItems"
+                            value-key="value"
+                            label-key="label"
+                            color="neutral"
+                            size="lg"
+                            class="w-full"
+                            :ui="{ content: 'min-w-[13rem]', item: 'ps-6' }"
+                            :search-input="{ placeholder: t('common.searchPresets') }"
+                            :disabled="isFormDisabled"
+                            :placeholder="t('common.selectPreset')"
+                          />
+                        </UFormField>
+
+                        <div
+                          v-if="configStore.dl_fields.length > 0"
+                          class="grid gap-3 md:grid-cols-2 xl:grid-cols-3"
+                        >
+                          <DLInput
+                            id="force_download"
+                            v-model="dlFields['--no-download-archive']"
+                            type="bool"
+                            :label="t('common.forceDownload')"
+                            icon="i-lucide-download"
+                            :disabled="isFormDisabled"
+                            compact
+                          />
+
+                          <DLInput
+                            v-for="(fi, index) in sortedDLFields"
+                            :id="fi?.id || `dlf-${index}`"
+                            :key="fi.id || `dlf-${index}`"
+                            v-model="dlFields[fi.field]"
+                            :type="fi.kind"
+                            :description="fi.description"
+                            :label="fi.name"
+                            :icon="fi.icon"
+                            :field="fi.field"
+                            :disabled="isFormDisabled"
+                            compact
+                          />
+                        </div>
+                      </div>
+                    </form>
                   </div>
-                </div>
-              </div>
-
-              <div class="flex flex-1 flex-col gap-4 p-4">
-                <div
-                  v-if="showThumbnails"
-                  class="-mx-4 -mt-4 overflow-hidden border-b border-default bg-muted/20"
-                >
-                  <figure :class="['relative w-full overflow-hidden', thumbnailRatioClass]">
-                    <span
-                      v-if="isEmbedable(item.url)"
-                      class="play-overlay"
-                      @click="embed_url = getEmbedable(item.url) as string"
-                    >
-                      <span class="play-icon embed-icon" aria-hidden="true">
-                        <UIcon name="i-lucide-play" class="size-6 translate-x-px text-white" />
-                      </span>
-                      <img
-                        v-if="getGridImage(item)"
-                        :src="getGridImage(item)"
-                        @load="pImg"
-                        @error="onImgError"
-                      />
-                      <img v-else src="/images/placeholder.png" />
-                    </span>
-
-                    <template v-else>
-                      <img
-                        v-if="getGridImage(item)"
-                        :src="getGridImage(item)"
-                        @load="pImg"
-                        @error="onImgError"
-                      />
-                      <img v-else src="/images/placeholder.png" />
-                    </template>
-                  </figure>
-                </div>
-
-                <div class="queue-progress rounded-md border border-default bg-muted/20">
-                  <div
-                    class="queue-progress__bar bg-success/35"
-                    :style="{ width: progressWidth(item) }"
-                  ></div>
-                  <div class="queue-progress__label">
-                    <template v-if="progressIcon(item)">
-                      <UIcon
-                        :name="progressIcon(item)"
-                        :class="[
-                          'me-1 size-4',
-                          progressIcon(item) === 'i-lucide-settings-2' ? 'animate-spin' : '',
-                        ]"
-                      />
-                    </template>
-                    <span>{{ progressText(item) }}</span>
-                  </div>
-                </div>
-
-                <div class="flex flex-wrap gap-2 text-sm *:min-w-32 *:flex-1">
-                  <button
-                    type="button"
-                    class="rounded-md border border-default bg-muted/20 px-3 py-2 text-default transition hover:border-primary hover:text-default"
-                    @click="toggleExpand(item._id, 'status')"
-                  >
-                    <span class="inline-flex w-full items-center justify-center gap-2">
-                      <UIcon
-                        :name="setIcon(item)"
-                        :class="[setIconColor(item), setIconAnimation(item), 'size-4 shrink-0']"
-                      />
-                      <span :class="['min-w-0 text-center', expandClass(item._id, 'status')]">
-                        {{ setStatus(item) }}
-                      </span>
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    class="rounded-md border border-default bg-muted/20 px-3 py-2 text-default transition hover:border-primary hover:text-default"
-                    @click="toggleExpand(item._id, 'preset')"
-                  >
-                    <span class="inline-flex w-full items-center justify-center gap-2">
-                      <UIcon
-                        name="i-lucide-sliders-horizontal"
-                        class="size-4 shrink-0 text-toned"
-                      />
-                      <span :class="['min-w-0 text-center', expandClass(item._id, 'preset')]">
-                        {{ item.preset }}
-                      </span>
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    class="rounded-md border border-default bg-muted/20 px-3 py-2 text-toned transition hover:border-primary hover:text-default"
-                    @click="toggleExpand(item._id, 'datetime')"
-                  >
-                    <UTooltip :text="formatLongDateTime(item.datetime, locale)">
-                      <span class="inline-flex w-full items-center justify-center gap-2">
-                        <UIcon name="i-lucide-clock-3" class="size-4 shrink-0 text-toned" />
-                        <span
-                          :class="['min-w-0 text-center', expandClass(item._id, 'datetime')]"
-                          :data-datetime="item.datetime"
-                          v-rtime="item.datetime"
-                        />
-                      </span>
-                    </UTooltip>
-                  </button>
-
-                  <button
-                    v-if="item.downloaded_bytes"
-                    type="button"
-                    class="rounded-md border border-default bg-muted/20 px-3 py-2 text-toned transition hover:border-primary hover:text-default"
-                    @click="toggleExpand(item._id, 'size')"
-                  >
-                    <span class="inline-flex w-full items-center justify-center gap-2">
-                      <UIcon name="i-lucide-hard-drive" class="size-4 shrink-0 text-toned" />
-                      <span :class="['min-w-0 text-center', expandClass(item._id, 'size')]">
-                        {{ formatBytes(item.downloaded_bytes, 2, t) }}
-                      </span>
-                    </span>
-                  </button>
-                </div>
-              </div>
-
-              <div class="ytp-border-top-soft px-4 py-4">
-                <div class="flex flex-wrap gap-2 *:min-w-32 *:flex-1">
-                  <UButton
-                    color="neutral"
-                    variant="outline"
-                    icon="i-lucide-circle-off"
-                    class="w-full justify-center"
-                    @click="() => void confirmCancel(item)"
-                  >
-                    {{ item.is_live ? t('common.stopStream') : t('common.cancel') }}
-                  </UButton>
-
-                  <UButton
-                    v-if="canStartItem(item)"
-                    color="neutral"
-                    variant="outline"
-                    icon="i-lucide-circle-play"
-                    class="w-full justify-center"
-                    @click="() => startItem(item)"
-                  >
-                    {{ t('common.start') }}
-                  </UButton>
-
-                  <UButton
-                    v-if="canPauseItem(item)"
-                    color="neutral"
-                    variant="outline"
-                    icon="i-lucide-pause"
-                    class="w-full justify-center"
-                    @click="() => pauseItem(item)"
-                  >
-                    {{ t('common.pause') }}
-                  </UButton>
-
-                  <UDropdownMenu :items="itemActionGroups(item)" :modal="false" class="w-full">
-                    <UButton
-                      color="neutral"
-                      variant="outline"
-                      icon="i-lucide-settings-2"
-                      trailing-icon="i-lucide-chevron-down"
-                      class="w-full justify-center"
-                    >
-                      {{ t('common.actions') }}
-                    </UButton>
-                  </UDropdownMenu>
                 </div>
               </div>
             </div>
-          </LateLoader>
-        </div>
 
-        <div v-if="!hasItems" class="space-y-4">
-          <UAlert
-            v-if="query"
-            color="warning"
-            variant="soft"
-            icon="i-lucide-search"
-            :title="t('queue.filterTitle')"
+            <img
+              :src="hero.image"
+              :alt="hero.alt"
+              data-hero
+              class="hero-art select-none"
+              :class="showSections ? 'hero-art--docked' : 'hero-art--above'"
+              width="429"
+              height="429"
+              draggable="false"
+            />
+          </div>
+
+          <div
+            v-if="paused"
+            class="ytp-card flex flex-wrap items-center justify-between gap-3 border-warning/40 bg-warning/10 px-4 py-3"
           >
-            <template #description>
-              <div class="space-y-3 text-sm text-default">
-                <p>
-                  {{ t('queue.noResultsFor') }} <code>{{ query }}</code
-                  >.
-                </p>
+            <p class="flex min-w-0 items-center gap-2 text-sm text-highlighted">
+              <UIcon name="i-lucide-circle-pause" class="size-4 shrink-0 text-warning" />
+              <span class="truncate">{{ t('common.downloadQueuePaused') }}</span>
+            </p>
 
-                <p>
-                  {{ t('queue.filterHelp') }}
-                  {{ t('queue.filterKeyValue') }}
-                </p>
+            <UButton
+              color="warning"
+              variant="solid"
+              size="xs"
+              icon="i-lucide-play"
+              :loading="resumingQueue"
+              @click="resumeQueue"
+            >
+              {{ t('common.resume') }}
+            </UButton>
+          </div>
 
-                <div>
-                  <p class="mb-1 font-medium">{{ t('queue.filterExamples') }}</p>
-                  <ul class="list-disc space-y-1 ps-5">
-                    <li><code>youtube.com</code> - {{ t('queue.filterExample1') }}</li>
-                    <li><code>is_live:true</code> - {{ t('queue.filterExample2') }}</li>
-                    <li><code>source_name:task_name</code> - {{ t('queue.filterExample3') }}</li>
-                  </ul>
+          <Transition name="queue-fade">
+            <section v-if="showSections" class="w-full space-y-6">
+              <section class="space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-2 text-sm font-semibold text-highlighted transition-colors hover:text-default"
+                    :aria-expanded="!queueCollapsed"
+                    aria-controls="simple-queue-section"
+                    @click="queueCollapsed = !queueCollapsed"
+                  >
+                    <UIcon
+                      :name="queueCollapsed ? 'i-lucide-chevron-right' : 'i-lucide-chevron-down'"
+                      class="size-3.5 text-toned"
+                    />
+                    <UIcon name="i-lucide-list-video" class="size-4 text-toned" />
+                    <span>{{ queueTitle }}</span>
+                  </button>
+
+                  <div
+                    v-if="!socketStore.isConnected || stateStore.hasMore()"
+                    class="flex flex-wrap items-center gap-2"
+                  >
+                    <UButton
+                      v-if="socketStore.connectionStatus !== 'connected'"
+                      color="neutral"
+                      variant="outline"
+                      size="xs"
+                      icon="i-lucide-refresh-cw"
+                      :loading="isRefreshing"
+                      :disabled="isRefreshing"
+                      @click="() => refreshQueue()"
+                    >
+                      {{ t('common.refresh') }}
+                    </UButton>
+
+                    <UButton
+                      v-if="stateStore.hasMore()"
+                      color="neutral"
+                      variant="outline"
+                      size="xs"
+                      :loading="isRefreshing"
+                      @click="() => loadMoreQueue()"
+                    >
+                      {{ t('common.showMore') }}
+                    </UButton>
+                  </div>
                 </div>
-              </div>
+
+                <Transition name="section-collapse">
+                  <div v-if="!queueCollapsed" id="simple-queue-section" class="overflow-hidden">
+                    <TransitionGroup
+                      v-if="queueItems.length > 0"
+                      name="queue-card"
+                      tag="div"
+                      class="grid grid-cols-1 gap-3 lg:grid-cols-2"
+                    >
+                      <div
+                        v-for="item in queueItems"
+                        :key="`queue-${item._id}`"
+                        class="ytp-card w-full min-w-0 max-w-full overflow-hidden"
+                      >
+                        <div class="p-4 pb-0 ytp-border-bottom-soft">
+                          <div
+                            v-if="downloadingStatuses.has(item.status) || item.status === null"
+                            class="queue-progress rounded-md border border-default bg-muted/20"
+                          >
+                            <div
+                              class="queue-progress__bar bg-success/35"
+                              :style="{ width: progressWidth(item) }"
+                            ></div>
+                            <div class="queue-progress__label">
+                              <template v-if="progressIcon(item)">
+                                <UIcon
+                                  :name="progressIcon(item)"
+                                  :class="[
+                                    'me-1 size-4',
+                                    ['i-lucide-settings-2', 'i-lucide-loader-circle'].includes(
+                                      progressIcon(item),
+                                    )
+                                      ? 'animate-spin'
+                                      : '',
+                                  ]"
+                                />
+                              </template>
+                              <span>{{ updateProgress(item) }}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="p-4">
+                          <div class="flex min-w-0 flex-col gap-4 sm:flex-row">
+                            <figure
+                              class="relative w-full shrink-0 overflow-hidden rounded-lg border border-default bg-muted/20 sm:w-52"
+                            >
+                              <span
+                                v-if="item.filename || isEmbedable(item.url)"
+                                class="play-overlay"
+                                @click="openPlayer(item)"
+                              >
+                                <span
+                                  :class="[
+                                    'play-icon',
+                                    isEmbedable(item.url) && !item.filename ? 'embed-icon' : '',
+                                  ]"
+                                  aria-hidden="true"
+                                >
+                                  <UIcon
+                                    name="i-lucide-play"
+                                    class="size-6 translate-x-px text-white"
+                                  />
+                                </span>
+                                <img
+                                  :src="resolveThumbnail(item)"
+                                  :alt="item.title || t('simple.videoThumbnail')"
+                                  loading="lazy"
+                                  class="aspect-video h-full w-full object-cover"
+                                  @error="onImgError($event, item)"
+                                />
+                              </span>
+
+                              <img
+                                v-else
+                                :src="resolveThumbnail(item)"
+                                :alt="item.title || t('simple.videoThumbnail')"
+                                loading="lazy"
+                                class="aspect-video h-full w-full object-cover"
+                                @error="onImgError($event, item)"
+                              />
+
+                              <span
+                                v-if="getDurationLabel(item)"
+                                class="absolute top-2 right-2 rounded-full bg-black/70 px-2 py-0.5 text-[11px] font-medium text-white"
+                              >
+                                {{ getDurationLabel(item) }}
+                              </span>
+                            </figure>
+
+                            <div class="min-w-0 flex-1 space-y-3">
+                              <div class="space-y-2">
+                                <UTooltip :text="item.title">
+                                  <a
+                                    :href="item.url"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    class="block truncate text-sm font-semibold text-highlighted hover:underline"
+                                  >
+                                    {{ item.title || t('simple.untitled') }}
+                                  </a>
+                                </UTooltip>
+
+                                <div class="flex flex-wrap items-center gap-2 text-xs">
+                                  <UBadge
+                                    :color="getStatusColor(item)"
+                                    variant="soft"
+                                    size="sm"
+                                    class="gap-1"
+                                  >
+                                    <UIcon
+                                      :name="getStatusIcon(item)"
+                                      :class="['size-3.5', getStatusIconAnimation(item)]"
+                                    />
+                                    <span>{{ getStatusLabel(item) }}</span>
+                                  </UBadge>
+
+                                  <UBadge
+                                    v-if="
+                                      item.extras?.retry_attempt && item.extras.retry_attempt > 1
+                                    "
+                                    color="warning"
+                                    variant="soft"
+                                    size="sm"
+                                    icon="i-lucide-rotate-cw"
+                                  >
+                                    {{
+                                      t('common.retryCount', { count: item.extras.retry_attempt })
+                                    }}
+                                  </UBadge>
+
+                                  <span
+                                    class="inline-flex items-center rounded-full border border-default px-2 py-0.5 text-toned"
+                                    :date-datetime="item.datetime"
+                                    v-rtime="item.datetime"
+                                  />
+                                </div>
+                              </div>
+
+                              <p class="line-clamp-3 text-xs leading-5 text-toned wrap-break-word">
+                                <template v-if="item.error || showMessage(item)">
+                                  <template v-if="item.error">
+                                    <span class="text-error">{{ item.error }}</span>
+                                  </template>
+                                  <template v-if="showMessage(item)">
+                                    <span class="text-error">{{ item.msg }}</span>
+                                  </template>
+                                </template>
+                                <template v-else>
+                                  {{ getDescription(item) || t('simple.noDescription') }}
+                                </template>
+                              </p>
+
+                              <div
+                                class="mt-auto flex flex-wrap items-center justify-end gap-2 pt-1"
+                              >
+                                <UButton
+                                  v-if="!item.status && item.auto_start === false"
+                                  color="neutral"
+                                  variant="soft"
+                                  size="xs"
+                                  icon="i-lucide-play-circle"
+                                  @click="() => stateStore.startItems([item._id])"
+                                >
+                                  {{ t('common.start') }}
+                                </UButton>
+
+                                <UButton
+                                  v-if="!item.status && stateStore.hasActive()"
+                                  color="neutral"
+                                  variant="soft"
+                                  size="xs"
+                                  icon="i-lucide-zap"
+                                  @click="() => stateStore.forceStartItems([item._id])"
+                                >
+                                  {{ t('queue.forceStart') }}
+                                </UButton>
+
+                                <UButton
+                                  v-if="
+                                    !item.status &&
+                                    stateStore.canPosition(item._id) &&
+                                    !stateStore.isFirst(item._id)
+                                  "
+                                  color="neutral"
+                                  variant="soft"
+                                  size="xs"
+                                  icon="i-lucide-arrow-up-to-line"
+                                  @click="() => stateStore.positionItems([item._id], 'front')"
+                                >
+                                  {{ t('queue.moveToFront') }}
+                                </UButton>
+
+                                <UButton
+                                  v-if="
+                                    !item.status &&
+                                    stateStore.canPosition(item._id) &&
+                                    !stateStore.isLastPending(item._id)
+                                  "
+                                  color="neutral"
+                                  variant="soft"
+                                  size="xs"
+                                  icon="i-lucide-arrow-down-to-line"
+                                  @click="() => stateStore.positionItems([item._id], 'back')"
+                                >
+                                  {{ t('queue.moveToBack') }}
+                                </UButton>
+
+                                <UButton
+                                  v-if="!item.status && item.auto_start === true"
+                                  color="neutral"
+                                  variant="soft"
+                                  size="xs"
+                                  icon="i-lucide-pause"
+                                  @click="() => stateStore.pauseItems([item._id])"
+                                >
+                                  {{ t('common.pause') }}
+                                </UButton>
+
+                                <UButton
+                                  color="neutral"
+                                  variant="outline"
+                                  size="xs"
+                                  icon="i-lucide-x"
+                                  @click="() => stateStore.cancelItems([item._id])"
+                                >
+                                  {{ item.is_live ? t('common.stop') : t('common.cancel') }}
+                                </UButton>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </TransitionGroup>
+
+                    <UEmpty
+                      v-else
+                      icon="i-lucide-inbox"
+                      :title="t('simple.queueEmpty')"
+                      class="rounded-lg border border-dashed border-default bg-muted/10 py-8"
+                    />
+                  </div>
+                </Transition>
+              </section>
+
+              <section class="space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-2 text-sm font-semibold text-highlighted transition-colors hover:text-default"
+                    :aria-expanded="!historyCollapsed"
+                    aria-controls="simple-history-section"
+                    @click="historyCollapsed = !historyCollapsed"
+                  >
+                    <UIcon
+                      :name="historyCollapsed ? 'i-lucide-chevron-right' : 'i-lucide-chevron-down'"
+                      class="size-3.5 text-toned"
+                    />
+                    <UIcon name="i-lucide-history" class="size-4 text-toned" />
+                    <span>{{ historyTitle }}</span>
+                  </button>
+
+                  <div v-if="!historyCollapsed" class="flex flex-wrap items-center gap-2">
+                    <UPagination
+                      v-if="historyPagination.total_pages > 1"
+                      :page="historyPagination.page"
+                      :total="historyPagination.total"
+                      :items-per-page="historyPagination.per_page"
+                      :disabled="historyIsLoading"
+                      show-edges
+                      size="sm"
+                      :sibling-count="0"
+                      @update:page="
+                        (page) =>
+                          load(page, {
+                            order: 'DESC',
+                            perPage: configStore.app.default_pagination,
+                          })
+                      "
+                    />
+
+                    <!-- A la izquierda de Actualizar: limpia el historial (los completados).
+                         Pide confirmación porque no se puede deshacer; no borra archivos. -->
+                    <UButton
+                      color="error"
+                      variant="outline"
+                      size="xs"
+                      icon="i-lucide-trash-2"
+                      :disabled="historyIsLoading || historyPagination.total === 0"
+                      @click="clearHistory"
+                    >
+                      {{ t('common.clearCompleted') }}
+                    </UButton>
+
+                    <UButton
+                      color="neutral"
+                      variant="outline"
+                      size="xs"
+                      icon="i-lucide-refresh-cw"
+                      :loading="historyIsLoading"
+                      :disabled="historyIsLoading"
+                      @click="
+                        () => reload({ order: 'DESC', perPage: configStore.app.default_pagination })
+                      "
+                    >
+                      {{ t('common.refresh') }}
+                    </UButton>
+                  </div>
+                </div>
+
+                <Transition name="section-collapse">
+                  <div
+                    v-if="!historyCollapsed"
+                    id="simple-history-section"
+                    class="space-y-3 overflow-hidden"
+                  >
+                    <div
+                      v-if="historyEntries.length > 0"
+                      class="grid grid-cols-1 gap-3 lg:grid-cols-2"
+                    >
+                      <div
+                        v-for="item in historyEntries"
+                        :key="`history-${historyPagination.page}-${item._id}`"
+                        class="ytp-card w-full min-w-0 max-w-full overflow-hidden"
+                      >
+                        <div class="p-4">
+                          <div class="flex min-w-0 flex-col gap-4 sm:flex-row">
+                            <figure
+                              class="relative w-full shrink-0 overflow-hidden rounded-lg border border-default bg-muted/20 sm:w-52"
+                            >
+                              <span
+                                v-if="item.filename || isEmbedable(item.url)"
+                                class="play-overlay"
+                                @click="openPlayer(item)"
+                              >
+                                <span
+                                  :class="[
+                                    'play-icon',
+                                    isEmbedable(item.url) && !item.filename ? 'embed-icon' : '',
+                                  ]"
+                                  aria-hidden="true"
+                                >
+                                  <UIcon
+                                    name="i-lucide-play"
+                                    class="size-6 translate-x-px text-white"
+                                  />
+                                </span>
+                                <img
+                                  :src="resolveThumbnail(item)"
+                                  :alt="item.title || t('simple.videoThumbnail')"
+                                  loading="lazy"
+                                  class="aspect-video h-full w-full object-cover"
+                                  @error="onImgError($event, item)"
+                                />
+                              </span>
+
+                              <img
+                                v-else
+                                :src="resolveThumbnail(item)"
+                                :alt="item.title || t('simple.videoThumbnail')"
+                                loading="lazy"
+                                class="aspect-video h-full w-full object-cover"
+                                @error="onImgError($event, item)"
+                              />
+
+                              <span
+                                v-if="getDurationLabel(item)"
+                                class="absolute top-2 right-2 rounded-full bg-black/70 px-2 py-0.5 text-[11px] font-medium text-white"
+                              >
+                                {{ getDurationLabel(item) }}
+                              </span>
+                            </figure>
+
+                            <div class="min-w-0 flex-1 space-y-3">
+                              <div class="space-y-2">
+                                <UTooltip :text="item.title">
+                                  <a
+                                    :href="item.url"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    class="block truncate text-sm font-semibold text-highlighted hover:underline"
+                                  >
+                                    {{ item.title || t('simple.untitled') }}
+                                  </a>
+                                </UTooltip>
+
+                                <div class="flex flex-wrap items-center gap-2 text-xs">
+                                  <UBadge
+                                    :color="getStatusColor(item)"
+                                    variant="soft"
+                                    size="sm"
+                                    class="gap-1"
+                                  >
+                                    <UIcon
+                                      :name="getStatusIcon(item)"
+                                      :class="['size-3.5', getStatusIconAnimation(item)]"
+                                    />
+                                    <span>{{ getStatusLabel(item) }}</span>
+                                  </UBadge>
+
+                                  <UBadge
+                                    v-if="
+                                      item.extras?.retry_attempt && item.extras.retry_attempt > 1
+                                    "
+                                    color="warning"
+                                    variant="soft"
+                                    size="sm"
+                                    icon="i-lucide-rotate-cw"
+                                  >
+                                    {{
+                                      t('common.retryCount', { count: item.extras.retry_attempt })
+                                    }}
+                                  </UBadge>
+
+                                  <span
+                                    class="inline-flex items-center rounded-full border border-default px-2 py-0.5 text-toned"
+                                    :date-datetime="item.datetime"
+                                    v-rtime="item.datetime"
+                                  />
+
+                                  <UBadge
+                                    v-if="mediaProfileLabel(item)"
+                                    color="neutral"
+                                    variant="soft"
+                                    size="sm"
+                                  >
+                                    {{ mediaProfileLabel(item) }}
+                                  </UBadge>
+                                </div>
+                              </div>
+
+                              <p class="line-clamp-3 text-xs leading-5 text-toned wrap-break-word">
+                                <template v-if="item.error || showMessage(item)">
+                                  <template v-if="item.error">
+                                    <span class="text-error">{{ item.error }}</span>
+                                  </template>
+                                  <template v-if="showMessage(item)">
+                                    <span class="text-error">{{ item.msg }}</span>
+                                  </template>
+                                </template>
+                                <template v-else>
+                                  {{ getDescription(item) || t('simple.noDescription') }}
+                                </template>
+                              </p>
+
+                              <div
+                                class="mt-auto flex flex-wrap items-center justify-end gap-2 pt-1"
+                              >
+                                <UButton
+                                  v-if="getDownloadLink(item)"
+                                  color="primary"
+                                  variant="soft"
+                                  size="xs"
+                                  icon="i-lucide-download"
+                                  external
+                                  :href="getDownloadLink(item)"
+                                  :download="getDownloadName(item)"
+                                >
+                                  {{ t('common.download') }}
+                                </UButton>
+
+                                <UButton
+                                  v-if="!item.filename"
+                                  color="neutral"
+                                  variant="soft"
+                                  size="xs"
+                                  icon="i-lucide-rotate-cw"
+                                  @click="() => requeueItem(item)"
+                                >
+                                  {{ t('simple.requeue') }}
+                                </UButton>
+
+                                <UButton
+                                  color="neutral"
+                                  variant="outline"
+                                  size="xs"
+                                  icon="i-lucide-trash"
+                                  @click="() => deleteHistoryItem(item)"
+                                >
+                                  {{ t('common.delete') }}
+                                </UButton>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <UAlert
+                      v-else-if="historyIsLoading"
+                      color="info"
+                      variant="soft"
+                      icon="i-lucide-loader-circle"
+                      :title="t('history.loading')"
+                    />
+
+                    <UEmpty
+                      v-else
+                      icon="i-lucide-history"
+                      :title="t('simple.historyEmpty')"
+                      class="rounded-lg border border-dashed border-default bg-muted/10 py-8"
+                    />
+
+                    <div v-if="historyPagination.total_pages > 1" class="flex justify-end py-2">
+                      <UPagination
+                        :page="historyPagination.page"
+                        :total="historyPagination.total"
+                        :items-per-page="historyPagination.per_page"
+                        :disabled="historyIsLoading"
+                        show-edges
+                        size="sm"
+                        :sibling-count="0"
+                        @update:page="
+                          (page) =>
+                            load(page, {
+                              order: 'DESC',
+                              perPage: configStore.app.default_pagination,
+                            })
+                        "
+                      />
+                    </div>
+                  </div>
+                </Transition>
+              </section>
+            </section>
+          </Transition>
+
+          <UModal
+            v-if="videoItem"
+            :open="videoOpen"
+            :title="t('simple.video')"
+            :dismissible="true"
+            :ui="{
+              content: lightsOut ? 'w-full sm:max-w-5xl shadow-2xl' : 'w-full sm:max-w-5xl',
+              body: 'p-0',
+            }"
+            @update:open="handleVideoOpenChange"
+          >
+            <template #body>
+              <LazyVideoPlayer
+                type="default"
+                :isMuted="false"
+                autoplay="true"
+                :isControls="true"
+                :item="videoItem"
+                class="w-full"
+                @closeModel="() => requestCloseVideo()"
+                @error="async (error: string) => await box.alert(error)"
+                @playback-state-change="(playing: boolean) => (playingNow = playing)"
+              />
             </template>
-          </UAlert>
+          </UModal>
 
-          <UEmpty
-            v-else
-            icon="i-lucide-triangle-alert"
-            :title="t('common.noItems')"
-            :description="t('queue.emptyDesc')"
-            class="rounded-lg border border-dashed border-default bg-muted/10 py-10"
-          />
+          <UModal
+            v-if="embedUrl"
+            :open="Boolean(embedUrl)"
+            :title="t('simple.embed')"
+            :dismissible="true"
+            :ui="{ content: 'w-full sm:max-w-5xl', body: 'p-0' }"
+            @update:open="(open) => !open && closePlayer()"
+          >
+            <template #body>
+              <LazyEmbedPlayer :url="embedUrl" @closeModel="closePlayer" />
+            </template>
+          </UModal>
+
+          <Dialog />
         </div>
-
-        <UModal
-          v-if="embed_url"
-          :open="Boolean(embed_url)"
-          :dismissible="true"
-          :title="t('common.embeddedPlayer')"
-          :ui="{ content: 'sm:max-w-5xl', body: 'p-0' }"
-          @update:open="(open) => !open && (embed_url = '')"
-        >
-          <template #body>
-            <LazyEmbedPlayer :url="embed_url" @closeModel="embed_url = ''" />
-          </template>
-        </UModal>
       </div>
-    </section>
-
-    <LazyGetInfo
-      v-if="info_view.url"
-      :link="info_view.url"
-      :preset="info_view.preset"
-      :cli="info_view.cli"
-      :useUrl="info_view.useUrl"
-      @closeModel="close_info()"
-    />
+    </AppRoot>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed, onBeforeUnmount, ref, toRef, watch } from 'vue';
 import { useStorage } from '@vueuse/core';
+import type { item_request } from '~/types/item';
+import type { ItemStatus, StoreItem } from '~/types/store';
+import AppRoot from '~/components/AppRoot.vue';
+import Shutdown from '~/components/shutdown.vue';
 import { useConfirm } from '~/composables/useConfirm';
-import { useDialog } from '~/composables/useDialog';
-import { useExpandableMeta } from '~/composables/useExpandableMeta';
+import { useDirtyCloseGuard } from '~/composables/useDirtyCloseGuard';
+import { useHistoryState } from '~/composables/useHistoryState';
 import { useMediaQuery } from '~/composables/useMediaQuery';
-import type { download_form_item } from '~/types/item';
-import type { StoreItem } from '~/types/store';
+import { usePresetOptions } from '~/composables/usePresetOptions';
+import { useNotification } from '~/composables/useNotification';
+import { getEmbedable, isEmbedable } from '~/utils/embedable';
+import { mediaProfileLabel } from '~/utils/mediaProfile';
 import {
   ag,
-  deepIncludes,
-  formatBytes,
   formatTime,
+  getHistoryImage,
   getImage,
-  getPath,
+  getRemoteImage,
+  isDownloadSkipped,
+  makeDownload,
   request,
   ucFirst,
 } from '~/utils';
-import { getEmbedable, isEmbedable } from '~/utils/embedable';
-import { formatLongDateTime } from '~/utils/date';
-import { usePageShell } from '~/composables/usePageShell';
-import { useFormHandoff } from '~/composables/useFormHandoff';
-import { isShareTarget, parseShareUrls, removeShareQuery } from '~/composables/useShareTarget';
-import { useRangeSelection } from '~/composables/useRangeSelection';
-const { locale, t } = useI18n();
+const { t } = useI18n();
 
-const config = useYtpConfig();
+definePageMeta({ layout: 'empty' });
+
+const configStore = useYtpConfig();
 const stateStore = useQueueState();
-const socket = useAppSocket();
+const socketStore = useAppSocket();
 const toast = useNotification();
-const box = useConfirm();
-const { confirmDialog } = useDialog();
-const { toggleExpand, expandClass } = useExpandableMeta();
-const downloadFormHandoff = useFormHandoff<download_form_item>('download');
-
-const bg_enable = useStorage<boolean>('random_bg', true);
-const bg_opacity = useStorage<number>('random_bg_opacity', 0.95);
-const display_style = useStorage<'grid' | 'list'>('queue_display_style', 'grid');
+const dlFields = useStorage<Record<string, any>>('dl_fields', {});
 const show_thumbnail = useStorage<boolean>('show_thumbnail', true);
-const hideThumbnail = useStorage<boolean>('hideThumbnailQueue', false);
-const thumbnail_ratio = useStorage<'is-16by9' | 'is-3by1'>('thumbnail_ratio', 'is-3by1');
-const show_popover = useStorage<boolean>('show_popover', true);
 const autoRefreshEnabled = useStorage<boolean>('queue_auto_refresh', true);
 const autoRefreshDelay = useStorage<number>('queue_auto_refresh_delay', 10000);
-const isMobile = useMediaQuery({ maxWidth: 639 });
+const queueCollapsed = useStorage<boolean>('simple_queue_collapsed', false);
+const historyCollapsed = useStorage<boolean>('simple_history_collapsed', false);
+const isMobile = useMediaQuery({ maxWidth: 1024 });
+const box = useConfirm();
+const app_shutdown = ref<boolean>(false);
 
-const pageShell = usePageShell('downloads');
-const formSection = ref<HTMLElement | null>(null);
-const info_view = ref<{ url: string; preset: string; cli: string; useUrl: boolean }>({
-  url: '',
-  preset: '',
-  cli: '',
-  useUrl: false,
-});
-const item_form = ref<download_form_item | object>({});
-const query = ref('');
-const toggleFilter = ref(false);
-const selectedElms = ref<string[]>([]);
-const masterSelectAll = ref(false);
-const embed_url = ref('');
-const isRefreshing = ref(false);
+const app = toRef(configStore, 'app');
+const paused = toRef(configStore, 'paused');
+const resumingQueue = ref(false);
+
+/**
+ * Reanuda el pool de descargas pausado desde cualquier vista (/api/system/pause).
+ * El estado real lo publica el backend en /api/system/configuration y por WebSocket;
+ * acá lo adelantamos para que el banner se vaya al instante y el evento 'resumed'
+ * lo confirme. Si falla, el banner queda visible: esa es la señal.
+ */
+const resumeQueue = async (): Promise<void> => {
+  if (resumingQueue.value) {
+    return;
+  }
+
+  resumingQueue.value = true;
+
+  try {
+    const resp = await request('/api/system/resume', { method: 'POST' });
+
+    if (!resp.ok) {
+      return;
+    }
+
+    configStore.update('paused', false);
+    toast.success(t('queue.queueResumed'), { timeout: 2000 });
+  } catch {
+    /* sin toast de error: el banner sigue ahí y el backend manda el estado real. */
+  } finally {
+    resumingQueue.value = false;
+  }
+};
+const presets = toRef(configStore, 'presets');
+const { selectItems: presetItems } = usePresetOptions(presets);
+const {
+  items: historyItems,
+  pagination,
+  isLoading,
+  load,
+  reload,
+  remove,
+  moveHandler,
+} = useHistoryState();
+
+const embedUrl = ref('');
+const videoItem = ref<StoreItem | null>(null);
+const playingNow = ref(false);
 const autoRefreshInterval = ref<ReturnType<typeof setInterval> | null>(null);
 const hadSocketDisconnect = ref(false);
-const route = useRoute();
-const router = useRouter();
-const shared = isShareTarget(route.query);
-const sharedUrl = parseShareUrls(route.query).join('\n');
+const videoOpen = computed<boolean>({
+  get: () => Boolean(videoItem.value),
+  set: (value: boolean) => {
+    if (value) {
+      return;
+    }
 
-const hasQueueContent = computed(() => stateStore.count() > 0 || query.value.trim().length > 0);
-const contentStyle = computed<'grid' | 'list'>(() =>
-  isMobile.value ? 'grid' : display_style.value,
-);
-const showThumbnails = computed(() => show_thumbnail.value && !hideThumbnail.value);
-
-const displayedItems = computed<StoreItem[]>(() => {
-  const normalizedQuery = query.value.trim().toLowerCase();
-  const items = Object.values(stateStore.queue);
-
-  if (!normalizedQuery) {
-    return items;
-  }
-
-  return items.filter((item) => deepIncludes(item, normalizedQuery, new WeakSet()));
+    closePlayer();
+  },
 });
 
-const queueCountLabel = computed(() => {
-  if (stateStore.hasMore()) {
-    return t('queue.queuedCount', { shown: stateStore.shown(), total: stateStore.count() });
+const formUrl = ref('');
+const formPreset = ref(app.value.default_preset || '');
+const addInProgress = ref(false);
+const submitError = ref('');
+const showExtras = ref(false);
+const isRefreshing = ref(false);
+const historyInitialized = ref(false);
+
+const downloadingStatuses: ReadonlySet<ItemStatus | null> = new Set([
+  'downloading',
+  'postprocessing',
+  'preparing',
+]);
+
+const fieldUi = {
+  label: 'font-semibold text-default',
+  container: 'space-y-2',
+};
+
+const urlInputUi = {
+  root: 'w-full',
+  base: 'bg-elevated/60 ring-default focus-visible:ring-primary',
+};
+
+const historyPagination = computed(() => pagination.value);
+const historyIsLoading = computed(() => isLoading.value);
+const queueItems = computed<StoreItem[]>(() => Object.values(stateStore.queue));
+const queueCount = computed(() => stateStore.count());
+const historyCount = computed(() => historyPagination.value.total);
+const queueTitle = computed(() =>
+  queueCount.value > 0 ? `${t('common.queue')} (${queueCount.value})` : t('common.queue'),
+);
+const historyTitle = computed(() =>
+  historyCount.value > 0 ? `${t('common.history')} (${historyCount.value})` : t('common.history'),
+);
+const historyEntries = computed<StoreItem[]>(() => historyItems.value);
+const hasAnyItems = computed(() => queueItems.value.length > 0 || historyEntries.value.length > 0);
+const showSections = computed(() => hasAnyItems.value || historyIsLoading.value);
+const isFormDisabled = computed(() => addInProgress.value);
+const lightsOut = computed(() => Boolean(videoItem.value && playingNow.value));
+const formContainerClass = computed(() => (showSections.value ? 'is-docked' : 'max-w-2xl'));
+/* Con el hero acoplado el cajón comparte espacio: la barra y el botón se achican. */
+const downloadButtonClass = computed(() =>
+  showSections.value
+    ? 'shrink-0 justify-center min-w-0 px-3'
+    : 'shrink-0 justify-center min-w-20 sm:min-w-28',
+);
+const downloadLabelClass = computed(() => (showSections.value ? 'hidden lg:inline' : ''));
+const hero = useHeroArt();
+const greetingMessage = computed(() => {
+  const hour = new Date().getHours();
+
+  if (hour >= 5 && hour < 12) {
+    return t('simple.greetingMorning');
   }
 
-  return t('queue.queuedCountShort', { count: stateStore.count() });
-});
+  if (hour >= 12 && hour < 17) {
+    return t('simple.greetingAfternoon');
+  }
 
-const hasItems = computed(() => displayedItems.value.length > 0);
-const hasSelected = computed(() => selectedElms.value.length > 0);
-const displayedItemIds = computed(() => displayedItems.value.map((item) => item._id));
-const rangeSelection = useRangeSelection(selectedElms, displayedItemIds);
-const hasManualStart = computed(() =>
-  Object.values(stateStore.queue).some((item) => !item.status && false === item.auto_start),
-);
-const hasPausable = computed(() =>
-  Object.values(stateStore.queue).some((item) => !item.status && true === item.auto_start),
-);
-const thumbnailRatioClass = computed(() =>
-  thumbnail_ratio.value === 'is-16by9' ? 'aspect-video' : 'aspect-[3/1]',
+  if (hour >= 17 && hour < 21) {
+    return t('simple.greetingEvening');
+  }
+
+  return t('simple.greetingNight');
+});
+const sortedDLFields = computed(() =>
+  [...configStore.dl_fields].sort((left, right) => (left.order || 0) - (right.order || 0)),
 );
 
 const refreshQueue = async (): Promise<void> => {
@@ -900,7 +1003,8 @@ const loadMoreQueue = async (): Promise<void> => {
 
   try {
     await stateStore.loadMore();
-  } catch {
+  } catch (error) {
+    console.error('Failed to load more queue items:', error);
     toast.error(t('common.failedLoadMore'));
   } finally {
     isRefreshing.value = false;
@@ -912,12 +1016,12 @@ const startAutoRefresh = (): void => {
     clearInterval(autoRefreshInterval.value);
   }
 
-  if (!autoRefreshEnabled.value || socket.isConnected) {
+  if (!autoRefreshEnabled.value || socketStore.isConnected) {
     return;
   }
 
   autoRefreshInterval.value = setInterval(async () => {
-    if (!socket.isConnected && autoRefreshEnabled.value) {
+    if (!socketStore.isConnected && autoRefreshEnabled.value) {
       await refreshQueue();
     }
   }, autoRefreshDelay.value);
@@ -932,414 +1036,309 @@ const stopAutoRefresh = (): void => {
   autoRefreshInterval.value = null;
 };
 
-onMounted(async () => {
-  if (shared) {
-    await router.replace({ query: removeShareQuery(route.query) });
+const addDownload = async (): Promise<void> => {
+  const url = formUrl.value.trim();
+  submitError.value = '';
+
+  if (!url) {
+    submitError.value = t('common.enterValidUrl');
+    return;
   }
 
-  if (sharedUrl) {
-    await toNewDownload({ url: sharedUrl });
-  }
+  let cli = '';
+  const dlFieldsExtra = ['--no-download-archive'];
 
-  const pendingDownload = downloadFormHandoff.take();
-  if (pendingDownload) {
-    await toNewDownload(pendingDownload);
-  }
+  const is_valid = (dl_field: string): boolean => {
+    if (dlFieldsExtra.includes(dl_field)) {
+      return true;
+    }
 
-  await refreshQueue();
+    if (configStore.dl_fields && configStore.dl_fields.length > 0) {
+      return configStore.dl_fields.some((field) => dl_field === field.field);
+    }
 
-  if (!socket.isConnected && autoRefreshEnabled.value) {
-    startAutoRefresh();
-  }
-});
+    return false;
+  };
 
-onBeforeUnmount(() => stopAutoRefresh());
+  if (dlFields.value && Object.keys(dlFields.value).length > 0) {
+    const joined = [];
 
-watch(toggleFilter, () => {
-  if (!toggleFilter.value) {
-    query.value = '';
-  }
-});
-
-watch(
-  () => socket.isConnected,
-  (connected) => {
-    if (connected) {
-      stopAutoRefresh();
-
-      if (hadSocketDisconnect.value) {
-        hadSocketDisconnect.value = false;
-        void refreshQueue();
+    for (const [key, value] of Object.entries(dlFields.value)) {
+      if (false === is_valid(key)) {
+        continue;
       }
 
+      if ([undefined, null, '', false].includes(value as any)) {
+        continue;
+      }
+
+      const keyRegex = new RegExp(`(^|\\s)${key}(\\s|$)`);
+
+      if (cli && keyRegex.test(cli)) {
+        continue;
+      }
+
+      joined.push(true === value ? `${key}` : `${key} ${value}`);
+    }
+
+    if (joined.length > 0) {
+      cli = joined.join(' ');
+    }
+  }
+
+  const payload: item_request[] = [
+    {
+      url,
+      preset: formPreset.value || app.value.default_preset,
+      cli: cli || '',
+      auto_start: true,
+    },
+  ];
+
+  try {
+    addInProgress.value = true;
+
+    const response = await request('/api/history', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      submitError.value = t('common.errorPrefix', {
+        msg: data?.error || t('queue.failedToAdd'),
+      });
       return;
     }
 
-    hadSocketDisconnect.value = true;
+    let had_errors = false;
+    const errors: string[] = [];
 
-    if (autoRefreshEnabled.value) {
-      startAutoRefresh();
-    }
-  },
-);
+    if (200 === response.status && Array.isArray(data)) {
+      data.forEach((item: Record<string, any>) => {
+        if (false !== item.status) {
+          return;
+        }
 
-watch(autoRefreshEnabled, (enabled) => {
-  if (enabled && !socket.isConnected) {
-    startAutoRefresh();
-    return;
-  }
+        had_errors = true;
 
-  stopAutoRefresh();
-});
+        if (item?.hidden) {
+          return;
+        }
 
-watch(autoRefreshDelay, () => {
-  if (autoRefreshEnabled.value && !socket.isConnected) {
-    startAutoRefresh();
-  }
-});
-
-watch(
-  displayedItemIds,
-  (ids) => {
-    const idSet = new Set(ids);
-    selectedElms.value = selectedElms.value.filter((id) => idSet.has(id));
-
-    if (masterSelectAll.value) {
-      selectedElms.value = [...ids];
-    }
-  },
-  { immediate: true },
-);
-
-watch(selectedElms, (value) => {
-  const ids = displayedItemIds.value;
-  masterSelectAll.value = ids.length > 0 && ids.every((id) => value.includes(id));
-});
-
-watch(
-  () => info_view.value.url,
-  (value) => {
-    if (!bg_enable.value) {
-      return;
-    }
-
-    document
-      .querySelector('body')
-      ?.setAttribute('style', `opacity: ${value ? 1 : bg_opacity.value}`);
-  },
-);
-
-watch(embed_url, (value) => {
-  if (!bg_enable.value) {
-    return;
-  }
-
-  document.querySelector('body')?.setAttribute('style', `opacity: ${value ? 1 : bg_opacity.value}`);
-});
-
-const toggleMasterSelection = (): void => {
-  rangeSelection.reset();
-
-  if (masterSelectAll.value) {
-    selectedElms.value = [];
-    masterSelectAll.value = false;
-    return;
-  }
-
-  selectedElms.value = [...displayedItemIds.value];
-  masterSelectAll.value = true;
-};
-
-const resumeDownload = async (): Promise<void> => {
-  await request('/api/system/resume', { method: 'POST' });
-};
-
-const pauseDownload = async (): Promise<void> => {
-  const { status } = await confirmDialog({
-    title: t('app.pauseAll'),
-    confirmText: t('common.pause'),
-    cancelText: t('common.cancel'),
-    confirmColor: 'warning',
-    message: t('queue.pauseDownloadsDesc'),
-  });
-
-  if (!status) {
-    return;
-  }
-
-  await request('/api/system/pause', { method: 'POST' });
-};
-
-const close_info = (): void => {
-  info_view.value.url = '';
-  info_view.value.preset = '';
-  info_view.value.cli = '';
-  info_view.value.useUrl = false;
-};
-
-const view_info = (
-  url: string,
-  useUrl: boolean = false,
-  preset: string = '',
-  cli: string = '',
-): void => {
-  info_view.value.url = url;
-  info_view.value.useUrl = useUrl;
-  info_view.value.preset = preset;
-  info_view.value.cli = cli;
-};
-
-const changeDisplay = (): void => {
-  display_style.value = display_style.value === 'grid' ? 'list' : 'grid';
-};
-
-const toNewDownload = async (item: download_form_item | Partial<StoreItem>): Promise<void> => {
-  if (!item) {
-    return;
-  }
-
-  if (config.showForm) {
-    config.showForm = false;
-    await nextTick();
-  }
-
-  item_form.value = item;
-
-  await nextTick();
-  config.showForm = true;
-  await nextTick();
-  formSection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-};
-
-const getItemPath = (item: StoreItem): string => getPath(config.app.download_path, item) || '';
-const getListImage = (item: StoreItem): string =>
-  getImage(config.app.download_path, item, false) || '';
-const getGridImage = (item: StoreItem): string => getImage(config.app.download_path, item) || '';
-const canStartItem = (item: StoreItem): boolean => !item.auto_start && !item.status;
-const canPauseItem = (item: StoreItem): boolean => item.auto_start && !item.status;
-
-const bulkActionGroups = computed(() => {
-  const groups: Array<Array<Record<string, unknown>>> = [[]];
-  const selectedLiveOnly =
-    selectedElms.value.length > 0 &&
-    selectedElms.value.every((id) => {
-      const item = stateStore.get(id);
-      return Boolean(item?.is_live);
-    });
-
-  if (hasManualStart.value) {
-    groups[0]?.push({
-      label: t('common.start'),
-      icon: 'i-lucide-circle-play',
-      disabled: !hasSelected.value,
-      onSelect: () => startItems(),
-    });
-  }
-
-  if (stateStore.hasActive()) {
-    groups[0]?.push({
-      label: t('queue.forceStart'),
-      icon: 'i-lucide-zap',
-      disabled: !hasSelected.value,
-      onSelect: () => forceStartItems(),
-    });
-  }
-
-  groups[0]?.push({
-    label: t('queue.moveToFront'),
-    icon: 'i-lucide-arrow-up-to-line',
-    disabled: !hasSelected.value,
-    onSelect: () => positionItems('front'),
-  });
-
-  groups[0]?.push({
-    label: t('queue.moveToBack'),
-    icon: 'i-lucide-arrow-down-to-line',
-    disabled: !hasSelected.value,
-    onSelect: () => positionItems('back'),
-  });
-
-  if (hasPausable.value) {
-    groups[0]?.push({
-      label: t('common.pause'),
-      icon: 'i-lucide-pause',
-      disabled: !hasSelected.value,
-      onSelect: () => pauseSelected(),
-    });
-  }
-
-  groups[0]?.push({
-    label: selectedLiveOnly ? t('common.stop') : t('common.cancel'),
-    icon: 'i-lucide-circle-off',
-    disabled: !hasSelected.value,
-    onSelect: () => cancelSelected(),
-  });
-
-  return groups;
-});
-
-const itemActionGroups = (item: StoreItem): Array<Array<Record<string, unknown>>> => {
-  const groups: Array<Array<Record<string, unknown>>> = [];
-  const primaryActions: Array<Record<string, unknown>> = [];
-
-  if (isEmbedable(item.url)) {
-    primaryActions.push({
-      label: t('common.playVideo'),
-      icon: 'i-lucide-play',
-      onSelect: () => {
-        embed_url.value = getEmbedable(item.url) as string;
-      },
-    });
-  }
-
-  primaryActions.push({
-    label: item.is_live ? t('common.stopStream') : t('common.cancelDownload'),
-    icon: 'i-lucide-circle-off',
-    onSelect: () => confirmCancel(item),
-  });
-
-  if (canStartItem(item)) {
-    primaryActions.push({
-      label: t('common.startDownload'),
-      icon: 'i-lucide-circle-play',
-      onSelect: () => startItem(item),
-    });
-  }
-
-  if (!item.status) {
-    if (stateStore.hasActive()) {
-      primaryActions.push({
-        label: t('queue.forceStart'),
-        icon: 'i-lucide-zap',
-        onSelect: () => forceStartItem(item),
+        const message = t('common.errorPrefix', { msg: item.msg || t('queue.failedToAdd') });
+        errors.push(message);
       });
     }
 
-    if (stateStore.canPosition(item._id) && !stateStore.isFirst(item._id)) {
-      primaryActions.push({
-        label: t('queue.moveToFront'),
-        icon: 'i-lucide-arrow-up-to-line',
-        onSelect: () => positionItem(item, 'front'),
-      });
+    submitError.value = errors.join('\n');
+
+    if (202 === response.status) {
+      toast.success(data.message, { timeout: 2000 });
     }
 
-    if (stateStore.canPosition(item._id) && !stateStore.isLastPending(item._id)) {
-      primaryActions.push({
-        label: t('queue.moveToBack'),
-        icon: 'i-lucide-arrow-down-to-line',
-        onSelect: () => positionItem(item, 'back'),
-      });
+    if (false === had_errors) {
+      formUrl.value = '';
+      formPreset.value = app.value.default_preset || '';
+      dlFields.value = {};
     }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : t('queue.failedToAdd');
+    submitError.value = t('common.errorPrefix', { msg: message });
+  } finally {
+    addInProgress.value = false;
+  }
+};
+
+const resolveThumbnail = (item: StoreItem): string => {
+  if (!show_thumbnail.value) {
+    return '/images/placeholder.png';
   }
 
-  if (canPauseItem(item)) {
-    primaryActions.push({
-      label: t('common.pauseDownload'),
-      icon: 'i-lucide-pause',
-      onSelect: () => pauseItem(item),
-    });
+  if (historyEntries.value.some((entry) => entry._id === item._id)) {
+    return getHistoryImage(item);
   }
 
-  groups.push(primaryActions);
+  return getImage(configStore.app.download_path, item);
+};
 
-  groups.push([
-    {
-      label: t('common.ytdlpInformation'),
-      icon: 'i-lucide-info',
-      onSelect: () => view_info(item.url, false, item.preset, item.cli),
+const openPlayer = (item: StoreItem): void => {
+  if (item.filename) {
+    videoItem.value = item;
+    return;
+  }
+
+  if (!isEmbedable(item.url)) {
+    return;
+  }
+
+  const embed = getEmbedable(item.url);
+  if (embed) {
+    embedUrl.value = embed;
+  }
+};
+
+const closePlayer = (): void => {
+  playingNow.value = false;
+  embedUrl.value = '';
+  videoItem.value = null;
+};
+
+const { handleOpenChange: handleVideoOpenChange, requestClose: requestCloseVideo } =
+  useDirtyCloseGuard(videoOpen, {
+    dirty: playingNow,
+    preferenceKey: 'player',
+    title: t('common.closePlayer'),
+    message: t('common.closePlayerDesc'),
+    confirmText: t('common.closePlayer'),
+    cancelText: t('common.keepPlaying'),
+    onDiscard: async () => {
+      closePlayer();
     },
-    {
-      label: t('common.localInformation'),
-      icon: 'i-lucide-info',
-      onSelect: () => view_info(`/api/history/${item._id}`, true),
-    },
-  ]);
+  });
 
-  return groups;
+const getDescription = (item: StoreItem): string => {
+  const direct = (item.description ?? '').toString().trim();
+  if (direct) {
+    return direct;
+  }
+
+  const extrasDescription = ag<string | null>(item, 'extras.description', null)?.toString().trim();
+  if (extrasDescription) {
+    return extrasDescription;
+  }
+
+  const errorDescription = item.error?.trim();
+  if (errorDescription) {
+    return errorDescription;
+  }
+
+  const message = ag<string | null>(item, 'msg', null)?.toString().trim();
+  if (message) {
+    return message;
+  }
+
+  return '';
 };
 
-const setIcon = (item: StoreItem): string => {
+const getDurationLabel = (item: StoreItem): string | null => {
+  const duration = ag<number | null>(item, 'extras.duration', null);
+  if (duration == null || Number.isNaN(duration) || duration <= 0) {
+    return null;
+  }
+
+  return formatTime(duration);
+};
+
+const statusOverrides: Record<string, string> = {
+  downloading: 'common.downloading',
+  postprocessing: 'simple.statusPostprocessing',
+  preparing: 'simple.statusPreparing',
+  finished: 'common.completed',
+  error: 'common.error',
+  cancelled: 'common.cancelled',
+  not_live: 'simple.statusNotLive',
+  skip: 'common.skipped',
+};
+
+const getStatusLabel = (item: StoreItem): string => {
+  if (item.status === null) {
+    return t('common.queued');
+  }
+
+  if (isDownloadSkipped(item)) {
+    return t('history.downloadSkipped');
+  }
+
+  if (item.status === 'error' && item.filename) {
+    return t('history.partialError');
+  }
+
+  const key = statusOverrides[item.status];
+  return key ? t(key) : ucFirst(item.status.replace(/_/g, ' '));
+};
+
+const getStatusIcon = (item: StoreItem): string => {
   if (!item.auto_start) {
     return 'i-lucide-clock-3';
   }
 
-  if ('downloading' === item.status && item.is_live) {
-    return 'i-lucide-globe';
-  }
-
-  if ('downloading' === item.status) {
-    return 'i-lucide-download';
-  }
-
-  if ('postprocessing' === item.status) {
-    return 'i-lucide-settings-2';
-  }
-
-  if (null === item.status && true === config.paused) {
+  if (item.status === null && paused.value === true) {
     return 'i-lucide-circle-pause';
   }
 
-  if (!item.status) {
+  if (item.status === null) {
     return 'i-lucide-circle-question-mark';
   }
 
-  return 'i-lucide-loader-circle';
+  if (isDownloadSkipped(item)) {
+    return 'i-lucide-circle-slash';
+  }
+
+  if (item.status === 'downloading' && item.is_live) {
+    return 'i-lucide-globe';
+  }
+
+  const map: Record<string, string> = {
+    downloading: 'i-lucide-download',
+    postprocessing: 'i-lucide-settings-2',
+    preparing: 'i-lucide-loader-circle',
+    finished: 'i-lucide-circle-check',
+    error: 'i-lucide-triangle-alert',
+    cancelled: 'i-lucide-circle-x',
+    not_live: 'i-lucide-clock-3',
+    skip: 'i-lucide-circle-slash',
+  };
+
+  return map[item.status] ?? 'i-lucide-circle-question-mark';
 };
 
-const setIconAnimation = (item: StoreItem): string => {
-  const icon = setIcon(item);
+const getStatusIconAnimation = (item: StoreItem): string => {
+  const icon = getStatusIcon(item);
 
   return ['i-lucide-globe', 'i-lucide-settings-2', 'i-lucide-loader-circle'].includes(icon)
     ? 'animate-spin'
     : '';
 };
 
-const setStatus = (item: StoreItem): string => {
-  if (!item.auto_start) {
-    return t('queue.pending');
+const getStatusColor = (item: StoreItem): 'neutral' | 'info' | 'success' | 'error' | 'warning' => {
+  if (item.status === null) {
+    return 'neutral';
   }
 
-  if (null === item.status && true === config.paused) {
-    return t('common.paused');
+  if (isDownloadSkipped(item)) {
+    return 'info';
   }
 
-  if ('downloading' === item.status && item.is_live) {
-    return t('common.streaming');
+  if (item.status === 'error' && item.filename) {
+    return 'warning';
   }
 
-  if ('started' === item.status) {
-    return t('common.starting');
-  }
+  const map: Record<string, 'neutral' | 'info' | 'success' | 'error' | 'warning'> = {
+    downloading: 'info',
+    postprocessing: 'info',
+    preparing: 'info',
+    finished: 'success',
+    error: 'error',
+    cancelled: 'neutral',
+    not_live: 'warning',
+    skip: 'neutral',
+  };
 
-  if ('preparing' === item.status) {
-    return ag(item, 'extras.external_downloader') ? t('queue.externalDL') : t('queue.preparing');
-  }
-
-  if (!item.status) {
-    return t('common.unknownError');
-  }
-
-  return ucFirst(item.status);
+  return map[item.status] ?? 'info';
 };
 
-const setIconColor = (item: StoreItem): string => {
-  if (['downloading', 'started'].includes(item.status || '')) {
-    return 'text-success';
+const percentPipe = (value: number | null): string => {
+  if (value === null || Number.isNaN(value)) {
+    return '00.00';
   }
 
-  if ('postprocessing' === item.status) {
-    return 'text-info';
-  }
-
-  if (!item.auto_start || (null === item.status && true === config.paused)) {
-    return 'text-warning';
-  }
-
-  return 'text-default';
+  return parseFloat(String(value)).toFixed(2);
 };
 
 const ETAPipe = (value: number | null): string => {
-  if (null === value || 0 === value) {
+  if (value === null || value === 0) {
     return t('common.live');
   }
 
@@ -1357,7 +1356,7 @@ const ETAPipe = (value: number | null): string => {
 };
 
 const speedPipe = (value: number | null): string => {
-  if (null === value || 0 === value) {
+  if (value === null || value === 0) {
     return `0 ${t('common.kib')}${t('common.perSec')}`;
   }
 
@@ -1368,16 +1367,46 @@ const speedPipe = (value: number | null): string => {
   return `${parseFloat((value / Math.pow(k, i)).toFixed(dm))} ${t(`common.${sizes[i]}`)}${t('common.perSec')}`;
 };
 
-const percentPipe = (value: number | null): string => {
-  if (null === value || 0 === value) {
-    return '00.00';
+const updateProgress = (item: StoreItem): string => {
+  let text = '';
+
+  if (!item.auto_start) {
+    return t('queue.manualStart');
   }
 
-  return parseFloat(String(value)).toFixed(2);
+  if (item.status === null && paused.value === true) {
+    return t('queue.globalPause');
+  }
+
+  if (item.status === 'postprocessing') {
+    return t('queue.postProcessing');
+  }
+
+  if (item.status === 'preparing') {
+    return ag(item, 'extras.external_downloader')
+      ? t('queue.externalDownloader')
+      : t('queue.preparing');
+  }
+
+  if (item.status !== null && item.is_live && !item.speed) {
+    return t('queue.recordingLive');
+  }
+
+  if (item.status !== null) {
+    text += item.percent && !item.is_live ? `${percentPipe(item.percent)}%` : t('common.live');
+  }
+
+  text += item.speed ? ` - ${speedPipe(item.speed)}` : t('queue.waiting');
+
+  if (item.status !== null && item.eta) {
+    text += ` - ${ETAPipe(item.eta)}`;
+  }
+
+  return text;
 };
 
 const progressWidth = (item: StoreItem): string => {
-  if (!item.auto_start || (null === item.status && true === config.paused)) {
+  if (!item.auto_start || (null === item.status && true === paused.value)) {
     return '0%';
   }
 
@@ -1408,225 +1437,337 @@ const progressIcon = (item: StoreItem): string => {
   return '';
 };
 
-const progressText = (item: StoreItem): string => {
-  if (!item.auto_start) {
-    return t('queue.manualStart');
+const getDownloadLink = (item: StoreItem): string => {
+  if (!item.filename) {
+    return '';
   }
 
-  if (null === item.status && true === config.paused) {
-    return t('queue.globalPause');
-  }
-
-  if ('started' === item.status) {
-    return t('common.starting');
-  }
-
-  if ('postprocessing' === item.status) {
-    if (item.postprocessor) {
-      return t('queue.ppLabel', { pp: item.postprocessor });
-    }
-
-    return t('queue.postProcessing');
-  }
-
-  if ('preparing' === item.status) {
-    return ag(item, 'extras.external_downloader')
-      ? t('queue.externalDownloader')
-      : t('queue.preparing');
-  }
-
-  if (null != item.status && item.is_live && !item.speed) {
-    return t('queue.recordingLive');
-  }
-
-  let value = '';
-
-  if (null != item.status) {
-    value += item.percent && !item.is_live ? `${percentPipe(item.percent)}%` : t('common.live');
-  }
-
-  value += item.speed ? ` - ${speedPipe(item.speed)}` : t('queue.waiting');
-
-  if (null != item.status && item.eta) {
-    value += ` - ${ETAPipe(item.eta)}`;
-  }
-
-  return value;
+  return makeDownload(app.value, item);
 };
 
-const confirmCancel = async (item: StoreItem): Promise<boolean> => {
-  if (
-    true !==
-    (await box.confirm(
-      t('common.confirmActionNamed', {
-        action: item.is_live ? t('common.stop') : t('common.cancel'),
-        name: item.title,
-      }),
-    ))
-  ) {
+const getDownloadName = (item: StoreItem): string => {
+  if (!item.filename) {
+    return t('common.download');
+  }
+
+  const segments = item.filename.split('/');
+  return segments[segments.length - 1] || t('common.download');
+};
+
+const requeueItem = async (item: StoreItem): Promise<void> => {
+  if (!item.url) {
+    toast.error(t('simple.abilityRequeue'));
+    return;
+  }
+
+  const payload: item_request = {
+    url: item.url,
+    preset: item.preset || app.value.default_preset,
+    folder: item.folder,
+    template: item.template,
+    cookies: item.cookies,
+    cli: item.cli,
+    auto_start: item.auto_start ?? true,
+  };
+
+  if (item.extras && Object.keys(item.extras).length > 0) {
+    payload.extras = JSON.parse(JSON.stringify(item.extras));
+  }
+
+  await remove({ ids: [item._id], removeFile: false });
+  await reload({ order: 'DESC', perPage: configStore.app.default_pagination });
+  await stateStore.addDownload(payload);
+};
+
+const deleteHistoryItem = async (item: StoreItem): Promise<void> => {
+  await remove({ ids: [item._id], removeFile: app.value.remove_files });
+  await reload({ order: 'DESC', perPage: configStore.app.default_pagination });
+  toast.info(t('simple.removedFromHistory'));
+};
+
+// Limpia el historial completo (los completados). Pide confirmación porque no se puede
+// deshacer; no toca los archivos ya descargados.
+const clearHistory = async (): Promise<void> => {
+  if (false === (await box.confirm(t('history.clearCompletedConfirm')))) {
+    return;
+  }
+
+  await remove({ status: 'finished,skip', removeFile: false });
+  await reload({ order: 'DESC', perPage: configStore.app.default_pagination });
+  toast.info(t('simple.removedFromHistory'));
+};
+
+const handleHistoryItemMoved = moveHandler(() => historyInitialized.value);
+
+const showMessage = (item: StoreItem): boolean => {
+  if (!item?.msg || item.msg === item?.error) {
     return false;
   }
 
-  cancelItems(item._id);
-  return true;
+  return (item.msg?.length || 0) > 0;
 };
 
-const cancelSelected = async (): Promise<boolean> => {
-  const selectedLiveOnly =
-    selectedElms.value.length > 0 &&
-    selectedElms.value.every((id) => {
-      const item = stateStore.get(id);
-      return Boolean(item?.is_live);
-    });
-
-  if (
-    true !==
-    (await box.confirm(
-      t('common.confirmActionSelected', {
-        action: selectedLiveOnly ? t('common.stop') : t('common.cancel'),
-        count: selectedElms.value.length,
-      }),
-    ))
-  ) {
-    return false;
-  }
-
-  cancelItems(selectedElms.value);
-  selectedElms.value = [];
-  masterSelectAll.value = false;
-  return true;
+const preloadHeroArt = (): void => {
+  hero.preload();
 };
 
-const cancelItems = (item: string | string[]): void => {
-  const items = Array.isArray(item) ? [...item] : [item];
-
-  if (items.length < 1) {
-    return;
-  }
-
-  stateStore.cancelItems(items);
-};
-
-const startItem = async (item: StoreItem): Promise<void> => await stateStore.startItems([item._id]);
-const forceStartItem = async (item: StoreItem): Promise<void> =>
-  await stateStore.forceStartItems([item._id]);
-const positionItem = async (item: StoreItem, position: 'front' | 'back'): Promise<void> =>
-  await stateStore.positionItems([item._id], position);
-const pauseItem = async (item: StoreItem): Promise<void> => await stateStore.pauseItems([item._id]);
-
-const startItems = async (): Promise<void> => {
-  if (selectedElms.value.length < 1) {
-    return;
-  }
-
-  const eligible = selectedElms.value.filter((id) => {
-    const item = stateStore.get(id);
-    return Boolean(item && !item.auto_start && !item.status);
-  });
-
-  selectedElms.value = [];
-
-  if (eligible.length < 1) {
-    toast.error(t('common.noEligibleStart'));
-    return;
-  }
-
-  if (true !== (await box.confirm(t('queue.startSelectedConfirm', { count: eligible.length })))) {
-    return;
-  }
-
-  await stateStore.startItems(eligible);
-};
-
-const forceStartItems = async (): Promise<void> => {
-  if (selectedElms.value.length < 1) {
-    return;
-  }
-
-  const eligible = selectedElms.value.filter((id) => {
-    const item = stateStore.get(id);
-    return Boolean(item && !item.status);
-  });
-
-  selectedElms.value = [];
-  if (eligible.length < 1) {
-    toast.error(t('common.noEligibleStart'));
-    return;
-  }
-
-  if (
-    true !== (await box.confirm(t('queue.forceStartSelectedConfirm', { count: eligible.length })))
-  ) {
-    return;
-  }
-
-  await stateStore.forceStartItems(eligible);
-};
-
-const positionItems = async (position: 'front' | 'back'): Promise<void> => {
-  if (selectedElms.value.length < 1) {
-    return;
-  }
-
-  const eligible = selectedElms.value.filter((id) => {
-    const item = stateStore.get(id);
-    return Boolean(item && !item.status);
-  });
-
-  selectedElms.value = [];
-  if (eligible.length < 1) {
-    toast.error(t('common.noEligibleStart'));
-    return;
-  }
-
-  await stateStore.positionItems(eligible, position);
-};
-
-const pauseSelected = async (): Promise<void> => {
-  if (selectedElms.value.length < 1) {
-    return;
-  }
-
-  const eligible = selectedElms.value.filter((id) => {
-    const item = stateStore.get(id);
-    return Boolean(item && item.auto_start && !item.status);
-  });
-
-  selectedElms.value = [];
-
-  if (eligible.length < 1) {
-    toast.error(t('common.noEligiblePause'));
-    return;
-  }
-
-  if (true !== (await box.confirm(t('queue.pauseSelectedConfirm', { count: eligible.length })))) {
-    return;
-  }
-
-  await stateStore.pauseItems(eligible);
-};
-
-const pImg = (event: Event): void => {
+const onImgError = (event: Event, item: StoreItem): void => {
   const target = event.target as HTMLImageElement;
-
-  if (target.naturalHeight > target.naturalWidth) {
-    target.classList.add('image-portrait');
-  }
-};
-
-const onImgError = (event: Event): void => {
-  const target = event.target as HTMLImageElement;
+  const currentSrc = target.getAttribute('src') || '';
 
   if (target.src.endsWith('/images/placeholder.png')) {
     return;
   }
 
+  if (item) {
+    const fallback = getRemoteImage(item, false);
+    if (fallback && currentSrc !== fallback) {
+      target.src = fallback;
+      return;
+    }
+  }
+
   target.src = '/images/placeholder.png';
 };
+
+const init = async (): Promise<void> => {
+  historyInitialized.value = true;
+  socketStore.on('item_moved', handleHistoryItemMoved);
+  preloadHeroArt();
+  await Promise.allSettled([
+    refreshQueue(),
+    load(1, { order: 'DESC', perPage: configStore.app.default_pagination }),
+  ]);
+
+  if (!socketStore.isConnected && autoRefreshEnabled.value) {
+    startAutoRefresh();
+  }
+};
+
+onBeforeUnmount(() => {
+  socketStore.off('item_moved', handleHistoryItemMoved);
+  stopAutoRefresh();
+});
+
+watch(
+  () => socketStore.isConnected,
+  (connected) => {
+    if (connected) {
+      stopAutoRefresh();
+
+      if (hadSocketDisconnect.value) {
+        hadSocketDisconnect.value = false;
+        refreshQueue();
+      }
+
+      return;
+    }
+
+    hadSocketDisconnect.value = true;
+
+    if (autoRefreshEnabled.value) {
+      startAutoRefresh();
+    }
+  },
+);
+
+watch(autoRefreshEnabled, (enabled) => {
+  if (enabled && !socketStore.isConnected) {
+    startAutoRefresh();
+    return;
+  }
+
+  stopAutoRefresh();
+});
+
+watch(autoRefreshDelay, () => {
+  if (autoRefreshEnabled.value && !socketStore.isConnected) {
+    startAutoRefresh();
+  }
+});
+
+watch(
+  () => app.value.default_preset,
+  (value) => {
+    if (!formPreset.value) {
+      formPreset.value = value || '';
+    }
+  },
+);
+
+watch(
+  () => app.value.default_pagination,
+  (value, oldValue) => {
+    if (!configStore.is_loaded || value === oldValue || !historyInitialized.value) {
+      return;
+    }
+
+    load(1, { order: 'DESC', perPage: configStore.app.default_pagination });
+  },
+);
 </script>
 
 <style scoped>
-.page-form-wrap {
-  max-width: 100%;
+.hero-stage {
+  /* --hero-lg: hero del estado vacío (arriba del cajón, centrado).
+     --hero-ratio: fracción del ancho del escenario que ocupa el hero acoplado.
+     --hero-aspect: la inversa (1 / --hero-ratio), para reservar con aspect-ratio
+     la altura del hero desde el borde superior (y no desde el final del cajón).
+     El hero vive FUERA del cajón (PNG con transparencia a la derecha); el cajón
+     sólo envuelve al formulario. */
+  --hero-lg: clamp(9rem, 30vh, 17rem);
+  --hero-ratio: 0.28;
+  --hero-aspect: 3.5714;
+  --hero-gap: 1.5rem;
+}
+
+@media (width >= 40rem) {
+  .hero-stage {
+    --hero-ratio: 0.4;
+    --hero-aspect: 2.5;
+    --hero-gap: 2.5rem;
+  }
+}
+
+.hero-reserve-top {
+  width: 100%;
+  transition: height 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* Contiene la barra y el botón de tema. Al acoplarse toma la altura del hero
+   (aspect-ratio = 1 / --hero-ratio) y apoya su contenido abajo, así la caja queda
+   a la altura de las patas del ave en vez de flotar arriba con un hueco debajo. */
+.hero-top {
+  text-align: center;
+}
+
+.hero-top.is-docked {
+  aspect-ratio: var(--hero-aspect);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* El cajón se ajusta al formulario y le deja el 40% de la derecha al hero. */
+.hero-form {
+  transition:
+    width 0.45s cubic-bezier(0.22, 0.61, 0.36, 1),
+    max-width 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.hero-form.is-docked {
+  width: calc(100% - 100% * var(--hero-ratio) - var(--hero-gap));
+  margin-inline: 0 auto;
+}
+
+.hero-art {
+  position: absolute;
+  aspect-ratio: 1;
+  height: auto;
+  filter: drop-shadow(0 1.25rem 2.5rem rgb(74 53 37 / 0.16));
+  transition:
+    top 0.45s cubic-bezier(0.22, 0.61, 0.36, 1),
+    left 0.45s cubic-bezier(0.22, 0.61, 0.36, 1),
+    width 0.45s cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1),
+    opacity 0.28s ease;
+}
+
+/* Estado vacío: el hero vive arriba del cajón, grande y centrado. */
+.hero-art--above {
+  top: 0;
+  left: 50%;
+  width: var(--hero-lg);
+  transform: translateX(-50%);
+}
+
+/* Con cola/historial: se corre a la derecha del cajón, por afuera, y crece al 40%. */
+.hero-art--docked {
+  top: 0;
+  left: calc(100% - 100% * var(--hero-ratio));
+  width: calc(100% * var(--hero-ratio));
+  transform: translateX(0);
+  pointer-events: none;
+}
+
+.queue-fade-enter-active,
+.queue-fade-leave-active {
+  transition:
+    opacity 0.28s ease,
+    transform 0.32s ease;
+}
+
+.queue-fade-enter-from,
+.queue-fade-leave-to {
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+.section-collapse-enter-active,
+.section-collapse-leave-active {
+  transition:
+    opacity 0.22s ease,
+    transform 0.24s ease,
+    max-height 0.28s ease;
+}
+
+.section-collapse-enter-from,
+.section-collapse-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+  max-height: 0;
+}
+
+.section-collapse-enter-to,
+.section-collapse-leave-from {
+  opacity: 1;
+  transform: translateY(0);
+  max-height: 2000px;
+}
+
+.queue-card-enter-active,
+.queue-card-leave-active {
+  transition:
+    opacity 0.24s ease,
+    transform 0.28s ease;
+}
+
+.queue-card-enter-from,
+.queue-card-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.queue-card-leave-active {
+  position: absolute;
+}
+
+/* Mobile angosto (<500px): el ave va arriba centrada y el cajón abajo a todo el
+   ancho. El acoplado en dos columnas se veía diminuto y desalineado, así que a
+   esta resolución se apila como en el estado vacío. Va al final del archivo para
+   ganarle en orden de fuente a las reglas base de .hero-art--docked. */
+@media (width < 31.25rem) {
+  .hero-reserve-top.is-docked {
+    height: calc(var(--hero-lg) + var(--hero-gap));
+  }
+
+  .hero-top.is-docked {
+    aspect-ratio: auto;
+    justify-content: flex-start;
+  }
+
+  .hero-art--docked {
+    top: 0;
+    left: 50%;
+    width: var(--hero-lg);
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+
+  .hero-form.is-docked {
+    width: 100%;
+    margin-inline: auto;
+  }
 }
 </style>

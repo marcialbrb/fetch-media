@@ -1,4 +1,12 @@
-import { cookieDefault, parseMode, routeTarget, savePref, usePref } from '~/composables/useMode';
+import {
+  ADVANCED_PATH,
+  cookieDefault,
+  parseMode,
+  routeTarget,
+  savePref,
+  SIMPLE_PATH,
+  usePref,
+} from '~/composables/useMode';
 import { isShareTarget } from '~/composables/useShareTarget';
 
 export default defineNuxtRouteMiddleware(async (to) => {
@@ -13,12 +21,12 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
     const query = { ...to.query };
     delete query.simple;
-    const target = value === true ? '/simple' : value === false ? '/' : to.path;
+    const target = value === true ? SIMPLE_PATH : value === false ? ADVANCED_PATH : to.path;
 
     return navigateTo({ path: target, query, hash: to.hash }, { replace: true });
   }
 
-  if (path !== '/') {
+  if (path !== SIMPLE_PATH && path !== ADVANCED_PATH) {
     return;
   }
 

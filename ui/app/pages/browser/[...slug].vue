@@ -72,7 +72,7 @@
           variant="outline"
           size="sm"
           :icon="display_style === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
-          class="hidden sm:inline-flex"
+          class="hidden xl:inline-flex"
           @click="toggleDisplayStyle"
         >
           <span class="hidden sm:inline">{{
@@ -169,7 +169,9 @@
       class="w-full min-w-0 max-w-full overflow-hidden ytp-table-surface"
     >
       <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
-        <table class="min-w-360 w-full text-sm">
+        <!-- w-full + table-fixed en lugar de min-w-360 (1440 px): así la columna NOMBRE
+             se recorta y no aparece barra horizontal en toda la tabla. -->
+        <table class="w-full table-fixed text-sm">
           <thead class="bg-elevated/60 text-xs uppercase tracking-wide text-toned">
             <tr
               class="text-center [&>th]:border-e [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-e-0"
@@ -359,7 +361,9 @@
           </div>
         </div>
 
-        <div class="flex flex-1 flex-col gap-4 p-4 pt-0">
+        <!-- pt-3 y no pt-0: con pt-0 el borde inferior de la fila del nombre quedaba
+             pegado a las cajas de tipo/peso/tiempo. -->
+        <div class="flex flex-1 flex-col gap-4 p-4 pt-3">
           <div class="flex flex-wrap gap-2 text-sm *:min-w-32 *:flex-1">
             <div
               class="min-w-0 rounded-md border border-default bg-muted/20 px-3 py-2 text-center text-default"
@@ -541,7 +545,9 @@ const dialog = useDialog();
 const browser = useBrowser();
 
 const display_style = useStorage<string>('browser_display_style', 'list');
-const isMobile = useMediaQuery({ maxWidth: 639 });
+
+// >= 1280 (xl) para lista: la tabla pide 1440 px, así que por debajo sólo cuadrícula.
+const isWide = useMediaQuery({ query: '(min-width: 1280px)' });
 const relativeTime = (value: RelativeTimeInput): string => formatRelativeTime(value, locale.value);
 const show_filter = ref(false);
 const localSearch = ref('');
@@ -559,7 +565,7 @@ const filteredItems = browser.filteredItems;
 
 const controlEnabled = computed(() => Boolean(config.app.browser_control_enabled));
 const contentStyle = computed<'list' | 'grid'>(() =>
-  isMobile.value ? 'grid' : 'list' === display_style.value ? 'list' : 'grid',
+  isWide.value && 'list' === display_style.value ? 'list' : 'grid',
 );
 const pageShell = usePageShell('files');
 const hasItems = computed(() => filteredItems.value.length > 0);

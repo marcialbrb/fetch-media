@@ -71,8 +71,9 @@ const NavItems: Array<NavDefinition> = [
     breadcrumbSectionLabel: 'app.nav.breadcrumbs.workspace',
     description: 'queue.description',
     icon: 'i-lucide-download',
-    to: '/',
-    matchPath: '/',
+    // El modo simple vive en '/' y el avanzado en '/advanced'.
+    to: '/advanced',
+    matchPath: '/advanced',
   },
   {
     id: 'history',

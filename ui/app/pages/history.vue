@@ -53,7 +53,7 @@
           variant="outline"
           size="sm"
           :icon="display_style === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
-          class="hidden sm:inline-flex"
+          class="hidden xl:inline-flex"
           @click="changeDisplay"
         >
           <span class="hidden sm:inline">{{
@@ -143,9 +143,11 @@
         :title="t('history.loading')"
       />
 
+      <!-- overflow-x-auto y no overflow-hidden: la tabla pide 840 px (min-w-210), así
+           que entre 640 y 900 se cortaba la columna de acciones. Ahora se desplaza. -->
       <div
         v-if="'list' === contentStyle && hasItems"
-        class="w-full min-w-0 max-w-full overflow-hidden ytp-table-surface"
+        class="ytp-table-surface w-full min-w-0 max-w-full overflow-x-auto"
       >
         <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
           <table class="min-w-210 table-fixed w-full text-sm">
@@ -361,8 +363,8 @@
                   </template>
                 </td>
 
-                <td class="w-80 px-3 py-3 align-top whitespace-nowrap">
-                  <div class="flex items-center justify-end gap-1">
+                <td class="w-80 px-3 py-3 align-top">
+                  <div class="flex flex-wrap items-center justify-center gap-2">
                     <UButton
                       v-if="showRetryAction(item)"
                       color="neutral"
@@ -913,7 +915,7 @@ const toast = useNotification();
 const box = useConfirm();
 const { confirmDialog, promptDialog } = useDialog();
 const { toggleExpand, expandClass } = useExpandableMeta();
-const { canShare, shareUrl } = useWebShare();
+const { shareUrl } = useWebShare();
 const downloadFormHandoff = useFormHandoff<item_request>('download');
 const {
   items: historyItems,
@@ -936,7 +938,9 @@ const {
 const show_thumbnail = useStorage<boolean>('show_thumbnail', true);
 const hideThumbnail = useStorage<boolean>('hideThumbnailHistory', false);
 const display_style = useStorage<'grid' | 'list'>('history_display_style', 'grid');
-const isMobile = useMediaQuery({ maxWidth: 639 });
+
+// >= 1280 (xl) para lista: la tabla pide 840 px, así que por debajo sólo cuadrícula.
+const isWide = useMediaQuery({ query: '(min-width: 1280px)' });
 const bg_enable = useStorage<boolean>('random_bg', true);
 const bg_opacity = useStorage<number>('random_bg_opacity', 0.95);
 const thumbnail_ratio = useStorage<'is-16by9' | 'is-3by1'>('thumbnail_ratio', 'is-3by1');
@@ -958,9 +962,7 @@ const video_item = ref<StoreItem | null>(null);
 const playingNow = ref(false);
 const expandedMessages = reactive<Record<string, Set<string>>>({});
 
-const contentStyle = computed<'grid' | 'list'>(() =>
-  isMobile.value ? 'grid' : display_style.value,
-);
+const contentStyle = computed<'grid' | 'list'>(() => (isWide.value ? display_style.value : 'grid'));
 const showThumbnails = computed(() => show_thumbnail.value && !hideThumbnail.value);
 const lightsOut = computed(() => Boolean(video_item.value && playingNow.value));
 const videoOpen = computed<boolean>({
@@ -1004,7 +1006,9 @@ watch(video_item, (value) => {
   document.querySelector('body')?.setAttribute('style', `opacity: ${value ? 1 : bg_opacity.value}`);
 });
 
-const canShareUrl = computed(() => canShare());
+// Compartir link desactivado por ahora: el popover deformaba la columna de "Acciones"
+// en el historial. Para volver a activarlo, devolver `canShare()`.
+const canShareUrl = computed(() => false);
 
 watch(embed_url, (value) => {
   if (!bg_enable.value) {

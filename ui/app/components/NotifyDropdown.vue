@@ -1,14 +1,22 @@
 <template>
   <UPopover :content="{ align: 'end', side: 'bottom', sideOffset: 8 }">
-    <UButton color="neutral" variant="ghost" size="sm">
+    <!-- Debajo de 510 px no entra: se pisa con la marca del navbar. Aparece a 510. -->
+    <UButton
+      class="hidden min-[31.875rem]:inline-flex"
+      color="neutral"
+      variant="ghost"
+      size="sm"
+      :aria-label="t('common.notifications')"
+      :title="t('common.notifications')"
+    >
       <template #leading>
         <UIcon name="i-lucide-bell" class="size-4" />
       </template>
-      <span class="hidden sm:inline">{{ t('common.notifications') }}</span>
       <template #trailing>
-        <UBadge :color="severityTone" variant="soft" size="sm"
-          >{{ store.unreadCount }}/{{ store.notifications.length }}</UBadge
-        >
+        <!-- Sólo el número de no leídas; si no hay ninguna, la campana queda limpia. -->
+        <UBadge v-if="store.unreadCount > 0" :color="severityTone" variant="soft" size="sm">
+          {{ store.unreadCount }}
+        </UBadge>
       </template>
     </UButton>
 
@@ -42,7 +50,8 @@
                 @click="toggleToasts"
               />
             </UTooltip>
-            <UBadge :color="severityTone" variant="soft" size="sm">
+            <!-- Sólo si hay no leídas: con la bandeja al día no se muestra nada. -->
+            <UBadge v-if="store.unreadCount > 0" :color="severityTone" variant="soft" size="sm">
               {{ t('app.notifications.unread', { count: store.unreadCount }) }}
             </UBadge>
           </div>

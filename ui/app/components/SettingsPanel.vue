@@ -506,7 +506,6 @@ const separatorItems = computed(() =>
 );
 
 const modeItems = computed<Array<{ label: string; value: Mode }>>(() => [
-  { label: t('app.settings.layoutDefault'), value: 'default' },
   { label: t('app.settings.layoutSimple'), value: 'simple' },
   { label: t('app.settings.layoutRegular'), value: 'regular' },
 ]);

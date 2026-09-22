@@ -9,6 +9,10 @@
       @close="settings = false"
       @reload_bg="loadBg(true)"
     />
+
+    <!-- Vive acá adentro, dentro de UApp: un AccountModal montado desde un layout
+         (fuera de UApp) no puede cerrarse. Se abre por el evento 'ytp:open-account'. -->
+    <AccountModal v-model:open="accountOpen" />
   </UApp>
 </template>
 
@@ -16,6 +20,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useStorage } from '@vueuse/core';
 import SettingsPanel from '~/components/SettingsPanel.vue';
+import AccountModal from '~/components/AccountModal.vue';
 import type { toastPosition } from '~/composables/useNotification';
 import type { YTDLPOption } from '~/types/ytdlp';
 import { request, syncOpacity } from '~/utils';
@@ -47,6 +52,7 @@ const bgOpacity = useStorage<number>('random_bg_opacity', 0.95);
 const anim = useStorage<boolean>('page_anims', true);
 const toastPos = useStorage<toastPosition>('toast_position', 'top-right');
 const settings = ref(false);
+const accountOpen = ref(false);
 const bg = ref('');
 const bgLoading = ref(false);
 
@@ -59,6 +65,10 @@ const toaster = computed(() => ({
 
 const open = (): void => {
   settings.value = true;
+};
+
+const openAccount = (): void => {
+  accountOpen.value = true;
 };
 
 const setMode = (): void => {
@@ -118,6 +128,10 @@ const loadOptions = async (): Promise<void> => {
 onMounted(async () => {
   setMode();
 
+  // La navbar puede vivir fuera de AppRoot (layout): abre las ventanas por evento.
+  window.addEventListener('ytp:open-settings', open);
+  window.addEventListener('ytp:open-account', openAccount);
+
   try {
     await cfg.loadConfig();
   } catch {}
@@ -135,6 +149,9 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  window.removeEventListener('ytp:open-settings', open);
+  window.removeEventListener('ytp:open-account', openAccount);
+
   if (props.mode === 'simple') {
     document.documentElement.classList.remove('simple-mode');
   }

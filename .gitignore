@@ -41,3 +41,34 @@ version.txt
 test_impl.py
 ./eslint.config.js
 .pytest_cache
+
+# ---------------------------------------------------------------------------
+# Fetch Media - local runtime data. None of this belongs in a public repo.
+# ---------------------------------------------------------------------------
+
+# Instance state: settings database, logs and the archive. The logs record every
+# URL you download and the database holds your history and credentials hashes.
+/config/*
+!/config/.gitkeep
+
+# Downloaded media: private and large (this folder is routinely hundreds of MB).
+/downloads/*
+!/downloads/.gitkeep
+!/downloads/files/.gitkeep
+!/downloads/tmp/.gitkeep
+
+# Local development scaffolding (mock API, reference screenshots).
+/.dev-mock
+
+# Brand source material: the runtime copies live in ui/public/images/, so the
+# working files do not need to ship. Remove this line to version them.
+/hero
+
+# Secrets and local environment. `docker compose` reads ./.env, so keep it out of
+# the repo; commit a .env.example instead.
+.env
+.env.*
+!.env.example
+cookies.txt
+*.session
+*.netrc

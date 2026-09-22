@@ -3,7 +3,7 @@ import type { ApiErrorPayload, convert_args_response, Paginated } from '~/types/
 import type { StoreItem } from '~/types/store';
 
 const AG_SEPARATOR = '.';
-const APP_TITLE = 'YTPTube';
+const APP_TITLE = 'Fetch Media';
 
 const separators = [
   { name: 'common.sepComma', value: ',' },

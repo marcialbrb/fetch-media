@@ -6,6 +6,7 @@
     :icon="icon"
     :square="square"
     :aria-label="title"
+    :title="title"
     @click="
       () => {
         color.preference = next;
@@ -19,16 +20,19 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     square?: boolean;
     showLabel?: boolean;
     labelClass?: string;
+    /** Sólo alterna claro/oscuro (sin estado 'sistema'). */
+    twoState?: boolean;
   }>(),
   {
     square: false,
     showLabel: true,
     labelClass: '',
+    twoState: false,
   },
 );
 
@@ -36,14 +40,23 @@ const { t } = useI18n();
 
 type Choice = 'system' | 'light' | 'dark';
 
-const opts: Array<Choice> = ['system', 'light', 'dark'];
 const color = useColorMode();
-const current = computed<Choice>(() =>
-  opts.includes(color.preference as Choice) ? (color.preference as Choice) : 'system',
-);
-const next = computed<Choice>(
-  () => opts[(opts.indexOf(current.value) + 1) % opts.length] ?? 'system',
-);
+const order = computed<Choice[]>(() => (props.twoState ? ['light', 'dark'] : ['system', 'light', 'dark']));
+const current = computed<Choice>(() => {
+  const pref = color.preference as Choice;
+
+  if (props.twoState) {
+    // Sin 'sistema': si la preferencia guardada es 'system', arrancamos del modo resuelto.
+    return pref === 'light' || pref === 'dark' ? pref : color.value === 'dark' ? 'dark' : 'light';
+  }
+
+  return order.value.includes(pref) ? pref : 'system';
+});
+const next = computed<Choice>(() => {
+  const opts = order.value;
+
+  return opts[(opts.indexOf(current.value) + 1) % opts.length] ?? opts[0] ?? 'system';
+});
 const icon = computed(() => {
   if (current.value === 'light') {
     return 'i-lucide-sun';

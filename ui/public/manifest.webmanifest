@@ -1,6 +1,6 @@
 {
-  "short_name": "YTP",
-  "name": "YTPTube",
+  "short_name": "Fetch Media",
+  "name": "Fetch Media",
   "description": "A self-hosted download manager, automation interface, and media library preparation layer for yt-dlp.",
   "start_url": "/",
   "share_target": {
@@ -14,8 +14,8 @@
     }
   },
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#2B2624",
+  "theme_color": "#2B2624",
   "orientation": "any",
   "categories": [
     "downloaders",

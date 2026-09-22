@@ -5,7 +5,9 @@ export type Mode = 'default' | 'simple' | 'regular';
 type Pref = boolean | null;
 
 export const MODE_KEY = 'simple_mode';
-export const SIMPLE_PATH = '/simple';
+// El modo simple vive en la raíz y el avanzado en /advanced.
+export const SIMPLE_PATH = '/';
+export const ADVANCED_PATH = '/advanced';
 
 const YES = new Set(['1', 'true', 'yes', 'on']);
 const NO = new Set(['0', 'false', 'no', 'off']);
@@ -101,13 +103,8 @@ export const useMode = (): {
 
     const simpleRoute = cleanPath(route.path) === SIMPLE_PATH;
 
-    if (on.value && !simpleRoute) {
-      await navigateTo(SIMPLE_PATH);
-      return;
-    }
-
-    if (!on.value && simpleRoute) {
-      await navigateTo('/');
+    if (on.value !== simpleRoute) {
+      await navigateTo(on.value ? SIMPLE_PATH : ADVANCED_PATH);
     }
   };
 
@@ -121,10 +118,20 @@ export const useMode = (): {
   return { mode, on, def, save };
 };
 
+/**
+ * Devuelve la URL del otro modo cuando el path actual no corresponde al modo resuelto.
+ * `null` significa "dejalo donde está".
+ */
 export const routeTarget = (path: string, pref: Pref, fallback: boolean): string | null => {
-  if (cleanPath(path) !== '/') {
+  const current = cleanPath(path);
+
+  if (current !== SIMPLE_PATH && current !== ADVANCED_PATH) {
     return null;
   }
 
-  return isSimple(pref, fallback) ? SIMPLE_PATH : null;
+  if (isSimple(pref, fallback)) {
+    return current === ADVANCED_PATH ? SIMPLE_PATH : null;
+  }
+
+  return current === SIMPLE_PATH ? ADVANCED_PATH : null;
 };

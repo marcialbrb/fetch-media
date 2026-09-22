@@ -40,6 +40,7 @@
             :toggle-side="sidebarMenuSide"
             :menu="sidebarMenu"
             collapsible
+            v-model:collapsed="sidebarCollapsed"
             resizable
             :default-size="15"
             :min-size="10"
@@ -47,45 +48,29 @@
             :collapsed-size="4"
             :ui="dashboardSidebarUi"
           >
-            <template #header="{ collapsed }">
-              <UTooltip :text="connectionStatusLabel">
-                <NuxtLink
-                  to="/"
-                  class="flex w-full min-w-0 items-center gap-2 rounded-xl transition-colors hover:bg-elevated/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                  :class="collapsed ? 'justify-center p-1' : 'px-1.5 py-1'"
-                  :aria-label="t('common.home')"
+            <template #header>
+              <!-- Plegado + estado de la conexión. El estado se ve sólo con el cajón
+                   abierto: contraído no entra, y no es un dato esencial. -->
+              <div class="flex w-full items-center gap-3">
+                <UDashboardSidebarCollapse />
+
+                <div
+                  v-if="!sidebarCollapsed"
+                  class="flex min-w-0 items-center gap-2"
+                  :title="connectionStatusLabel"
                 >
                   <span
-                    class="relative inline-flex shrink-0 items-center justify-center transition-all duration-200"
-                    :class="
-                      collapsed
-                        ? 'size-10 rounded-xl bg-elevated/80 ring ring-default shadow-xs'
-                        : 'size-9 rounded-lg'
-                    "
-                  >
-                    <img
-                      :src="uri('/images/favicon.png')"
-                      alt="YTPTube"
-                      class="rounded-lg object-contain"
-                      :class="collapsed ? 'size-6' : 'size-5'"
-                    />
-                    <span
-                      aria-hidden="true"
-                      class="absolute inset-e-0 bottom-0 size-2.5 rounded-full ring-2 ring-default"
-                      :class="connectionStatusDotClass"
-                    />
+                    class="size-2.5 shrink-0 rounded-full ring-2 ring-default"
+                    :class="[
+                      connectionStatusDotClass,
+                      'connected' === socket.connectionStatus ? '' : 'animate-pulse',
+                    ]"
+                  />
+                  <span class="truncate text-xs text-muted">
+                    {{ t('common.status') }}: {{ connectionStatusLabel }}
                   </span>
-
-                  <div v-if="false === collapsed" class="min-w-0">
-                    <p class="truncate text-sm font-semibold" :class="connectionStatusColor">
-                      YTPTube
-                    </p>
-                    <p v-if="config?.app?.instance_title" class="truncate text-xs text-toned">
-                      {{ config.app.instance_title }}
-                    </p>
-                  </div>
-                </NuxtLink>
-              </UTooltip>
+                </div>
+              </div>
             </template>
 
             <template #default="{ collapsed }">
@@ -110,9 +95,7 @@
               </div>
             </template>
 
-            <template #footer="{ collapsed }">
-              <div v-if="false === collapsed" class="w-full"></div>
-            </template>
+            <template #footer />
           </UDashboardSidebar>
 
           <UDashboardPanel class="min-w-0 bg-transparent" :ui="dashboardPanelUi">
@@ -120,37 +103,22 @@
               <UDashboardNavbar :toggle="false" :title="pageTitle" :ui="dashboardNavbarUi">
                 <template #left>
                   <div class="flex items-center gap-2">
+                    <!-- Menú del sidebar en mobile. El plegado de escritorio vive dentro
+                         del cajón del sidebar (slot #footer), donde además cambia el icono. -->
                     <UDashboardSidebarToggle class="lg:hidden" />
-                    <UButton
-                      to="/"
-                      color="neutral"
-                      variant="ghost"
-                      size="sm"
-                      icon="i-lucide-house"
-                      class="lg:hidden"
-                    >
-                      {{ t('common.home') }}
-                    </UButton>
-                    <UDashboardSidebarCollapse class="hidden lg:inline-flex" />
+
+                    <!-- Acá iba un botón con el icono para volver al inicio: se quitó porque
+                         la marca de al lado ya es un enlace al inicio y quedaban dos iconos
+                         iguales (visible sobre todo al llegar a 1023 px). -->
+
+                    <!-- La marca ya es un enlace al inicio del avanzado (AppBrand no se envuelve). -->
+                    <AppBrand to="/advanced" />
                   </div>
                 </template>
 
                 <template #right>
                   <div class="flex items-center gap-1 sm:gap-2">
-                    <UButton
-                      v-if="socket.connectionStatus !== 'connected'"
-                      color="neutral"
-                      variant="ghost"
-                      size="sm"
-                      icon="i-lucide-refresh-cw"
-                      :loading="socket.connectionStatus === 'connecting'"
-                      :disabled="socket.connectionStatus === 'connecting'"
-                      :aria-label="t('common.reconnect')"
-                      :title="t('common.reconnect')"
-                      @click="socket.reconnect"
-                    >
-                      <span class="hidden xl:inline">{{ t('common.reconnect') }}</span>
-                    </UButton>
+                    <!-- Reconectar se movió al menú de la cuenta: el navbar queda sólo con iconos. -->
                     <NotifyDropdown />
 
                     <UButton
@@ -170,11 +138,20 @@
 
                     <UDashboardSearchButton class="hidden shrink-0 lg:inline-flex" />
 
+                    <ModeSwitch compact />
+
+                    <ThemeButton data-theme-toggle two-state :show-label="false" />
+
+                    <!-- En mobile se oculta: libera ancho para el botón de reconectar
+                         y recargar ya lo hace el propio navegador. -->
                     <UButton
                       color="neutral"
                       variant="ghost"
                       size="sm"
                       icon="i-lucide-refresh-cw"
+                      class="hidden sm:inline-flex"
+                      :aria-label="t('common.refresh')"
+                      :title="t('common.refresh')"
                       @click="() => router.go(0)"
                     >
                       <span class="hidden xl:inline">{{ t('common.refresh') }}</span>
@@ -188,9 +165,7 @@
                         icon="i-lucide-user-round"
                         :aria-label="accountLabel"
                         :title="accountLabel"
-                      >
-                        <span class="hidden xl:inline">{{ accountLabel }}</span>
-                      </UButton>
+                      />
                     </UDropdownMenu>
                   </div>
                 </template>
@@ -269,7 +244,7 @@
                   </div>
 
                   <footer
-                    v-if="config.is_loaded"
+                    v-if="false"
                     class="shell-footer mt-auto border-t border-default pt-6 text-sm text-toned"
                   >
                     <div class="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
@@ -383,6 +358,12 @@
                   </footer>
                 </div>
 
+                <!-- Franja al pie de la página, tomando el navbar como referencia:
+                     arranca donde termina el sidebar y no flota como en el modo simple.
+                     El -mb-6 (lg) absorbe el aire que deja el contenedor del panel, así la
+                     franja llega al borde inferior y el rail del sidebar termina en ella. -->
+                <AppFooter variant="band" class="mt-auto lg:-mb-6" />
+
                 <Dialog />
               </div>
             </template>
@@ -408,7 +389,7 @@ import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui';
 import { ref, computed, onBeforeUnmount, onMounted, readonly } from 'vue';
 import { useMediaQuery } from '~/composables/useMediaQuery';
 import AppRoot from '~/components/AppRoot.vue';
-import { formatPageTitle, parse_api_response, request, uri } from '~/utils';
+import { formatPageTitle, parse_api_response, request } from '~/utils';
 import { formatRelativeTime, type RelativeTimeInput } from '~/utils/relativeTime';
 import { formatDateTime } from '~/utils/date';
 import { getSidebarSwipeMode } from '~/utils/sidebarSwipe';
@@ -470,6 +451,13 @@ const accountMenu = computed<DropdownMenuItem[][]>(() => {
   ];
 
   const actions: DropdownMenuItem[] = [
+    {
+      label: t('common.reconnect'),
+      icon: 'i-lucide-refresh-cw',
+      onSelect: (): void => {
+        socket.reconnect();
+      },
+    },
     ...(authVisible.value && auth.status.value?.auth_method !== 'remote_user'
       ? [
           {
@@ -623,16 +611,26 @@ const handleSwipeCancel = (): void => {
 
 const dashboardSidebarUi = computed(() => {
   return {
+    // La vertical vuelve: es la que separa el sidebar de la web.
     root: 'shell-surface border-e border-default bg-default/95 backdrop-blur-sm',
-    header: 'border-b border-default px-2.5 py-3',
-    body: 'gap-3 px-2.5 py-3',
-    footer: 'border-t border-default px-2.5 py-3',
+    // La cabecera iguala la altura del navbar para que las dos franjas y el borde
+    // inferior queden alineados.
+    header: 'flex h-(--ui-header-height) items-center border-b border-default px-4 lg:px-6',
+    // Poco padding lateral a propósito: en el cajón colapsado (4rem) el pill del ítem
+    // necesita ancho; con px-4 quedaba en 32 px. El header sí mantiene el gutter.
+    body: 'gap-3 px-1.5 py-3',
+    // hidden: el slot #footer está vacío (el plegado vive en el header) y su border-t
+    // dibujaba la línea horizontal del pie del sidebar, la que quedaba desalineada con
+    // la franja del footer.
+    footer: 'hidden',
   };
 });
 
 const dashboardNavbarUi = {
   root: 'border-b border-default bg-transparent px-4 py-3 sm:px-5 lg:px-6',
-  title: 'text-sm font-semibold text-highlighted',
+  // El título del navbar (en "/" cae al nombre viejo, "YTPTube") se oculta: la página
+  // ya trae su propio encabezado y el navbar queda sólo con iconos.
+  title: 'hidden',
   right: 'flex items-center shrink-0 gap-1.5',
 };
 
@@ -641,11 +639,18 @@ const dashboardPanelUi = {
   body: 'flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-y-visible p-0',
 };
 
+// Estado plegado del sidebar, enlazado al cajón: el header lo usa para mostrar el
+// estado de la conexión sólo con el cajón abierto (el slot #header no recibe `collapsed`,
+// así que se enlaza con v-model y se evita el nombre para no pisar el del slot default).
+const sidebarCollapsed = ref(false);
+
 const navigationUi = (collapsed: boolean) => ({
   root: 'w-full',
-  list: 'gap-1.5',
+  // w-full en item y link: colapsado el pill del ítem medía 23 px (un cuadradito).
+  list: 'w-full gap-1.5',
+  item: 'w-full',
   link: collapsed
-    ? 'justify-center rounded-lg px-2 py-2'
+    ? 'w-full justify-center rounded-lg px-2 py-2'
     : 'rounded-lg px-2.5 py-2 text-sm font-medium text-default transition-colors',
   linkLeadingIcon: collapsed ? 'size-5' : 'size-4',
   linkLabel: collapsed ? 'hidden' : 'truncate',
@@ -719,18 +724,6 @@ const buildTooltip = computed(() =>
     sha: config.app?.app_commit_sha,
   }),
 );
-
-const connectionStatusColor = computed(() => {
-  if (socket.connectionStatus === 'connected') {
-    return 'text-success';
-  }
-
-  if (socket.connectionStatus === 'connecting') {
-    return 'text-warning';
-  }
-
-  return 'text-error';
-});
 
 const connectionStatusDotClass = computed(() => {
   if (socket.connectionStatus === 'connected') {

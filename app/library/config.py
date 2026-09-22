@@ -183,7 +183,7 @@ class Config(metaclass=Singleton):
     temp_path: str = "/tmp"
     """The path to the temporary directory."""
 
-    simple_mode: bool = False
+    simple_mode: bool = True
     """Enable simple mode."""
 
     temp_keep: bool = False

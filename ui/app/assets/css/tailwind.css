@@ -3,6 +3,11 @@
 @import 'tailwindcss';
 @import '@nuxt/ui';
 
+@theme {
+  --font-sans: 'Noto Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Fraunces', ui-serif, Georgia, 'Times New Roman', serif;
+}
+
 @layer base {
   html,
   body,
@@ -13,6 +18,17 @@
   body {
     min-height: 100vh;
     min-height: 100dvh;
+  }
+
+  /* Titulares con la serif del proyecto (IDEA.md); el cuerpo queda en Noto Sans. */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-serif);
+    letter-spacing: -0.01em;
   }
 
   html.bg-fanart {
@@ -58,18 +74,113 @@
 
   .shell-surface {
     background:
-      radial-gradient(circle at top left, rgb(99 102 241 / 0.14), transparent 28%),
-      radial-gradient(circle at top right, rgb(245 158 11 / 0.12), transparent 22%),
-      linear-gradient(180deg, rgb(255 255 255 / 0.6), rgb(248 250 252 / 0.72));
+      radial-gradient(circle at 12% -8%, rgb(255 143 48 / 0.16), transparent 34%),
+      radial-gradient(circle at 88% 4%, rgb(108 191 110 / 0.14), transparent 30%),
+      linear-gradient(180deg, rgb(255 253 247 / 0.62), rgb(245 240 230 / 0.8));
     backdrop-filter: blur(16px);
   }
 
   .dark .shell-surface {
     background:
-      radial-gradient(circle at top left, rgb(99 102 241 / 0.12), transparent 26%),
-      radial-gradient(circle at top right, rgb(245 158 11 / 0.07), transparent 20%),
-      linear-gradient(180deg, rgb(9 12 18 / 0.84), rgb(17 24 39 / 0.9));
+      radial-gradient(circle at 12% -8%, rgb(242 177 52 / 0.1), transparent 34%),
+      radial-gradient(circle at 88% 4%, rgb(49 89 53 / 0.36), transparent 36%),
+      linear-gradient(180deg, rgb(47 41 39 / 0.86), rgb(34 30 28 / 0.94));
     backdrop-filter: blur(16px);
+  }
+
+  /* Fila superior del avanzado: encabezado + cajón de URL + hero.
+     <768 px: el hero arriba del encabezado, chico, y el cajón a todo el ancho.
+     >=768 px: el hero en su propia columna, a la derecha del cajón. */
+  .ytp-top-row {
+    @apply flex flex-col gap-6;
+  }
+
+  .ytp-top-hero {
+    @apply flex justify-center;
+  }
+
+  /* El hero, por tramos (el crecimiento continuo desde 600 px se veía raro):
+       <768 px  → mascota chica (7.5rem), arriba del cajón.
+       >=768 px → columna fija de 10rem al lado del cajón.
+       >=1280 px → crece con la columna, con tope de 20rem. */
+  .ytp-top-hero img {
+    width: 100%;
+    max-width: 7.5rem;
+    height: auto;
+  }
+
+  @media (width < 48rem) {
+    .ytp-top-hero {
+      order: -1;
+    }
+  }
+
+  @media (width >= 48rem) {
+    .ytp-top-row {
+      @apply grid items-start;
+      /* Columna del hero fija: entre 768 y 1280 el pato es una mascota al lado del
+         cajón, no crece con la pantalla (eso era lo que se veía raro). */
+      grid-template-columns: minmax(0, 1fr) 10rem;
+    }
+
+    /* Alineado al cajón y no a toda la fila: así los botones de la cola terminan en
+       el borde derecho del cajón de URL y el hero queda solo en su columna. */
+    .ytp-top-header {
+      grid-column: 1;
+    }
+
+    .ytp-top-main {
+      grid-column: 1;
+      grid-row: 2;
+      min-width: 0;
+    }
+
+    .ytp-top-hero {
+      grid-column: 2;
+      grid-row: 2;
+      /* La fila la dimensiona el cajón y el pato se apoya en el borde inferior. Si el
+         PNG queda más alto que el cajón, la fila crece y las patas se van por debajo:
+         por eso, además de esto, el ancho tiene tope (ver el tramo de 1280). */
+      align-self: stretch;
+      align-items: end;
+    }
+
+    .ytp-top-hero img {
+      max-width: none;
+    }
+  }
+
+  /* Desde 1280 sobra lugar: el hero vuelve a crecer con la columna, con tope. */
+  @media (width >= 80rem) {
+    .ytp-top-row {
+      grid-template-columns: minmax(0, 1fr) minmax(11rem, 20%);
+    }
+
+    /* Tope de 16rem (~256 px de alto): en XL el cajón queda en ~265 px, así que el
+       pato nunca lo pasa y las patas siguen al ras de su borde inferior. */
+    .ytp-top-hero img {
+      max-width: 16rem;
+    }
+  }
+
+  /* Barra de la tarjeta fantasma de la cola: recorre el ancho mientras se encola. */
+  .ytp-pending-bar {
+    display: block;
+    height: 100%;
+    width: 40%;
+    border-radius: 999px;
+    background: var(--ui-primary);
+    animation: ytp-pending 1.4s ease-in-out infinite;
+  }
+
+  @keyframes ytp-pending {
+    0% {
+      transform: translateX(-100%);
+    }
+
+    100% {
+      transform: translateX(250%);
+    }
   }
 
   .ytp-page-header {
@@ -152,7 +263,7 @@
   .ytp-floating-surface {
     @apply border bg-default/95 shadow-xl backdrop-blur-md;
     border-color: var(--ytp-surface-border-solid);
-    box-shadow: 0 1rem 2rem rgb(15 23 42 / 0.1);
+    box-shadow: 0 1rem 2rem rgb(74 53 37 / 0.16);
   }
 
   .ytp-floating-surface [data-slot='item'][data-highlighted]::before,
@@ -167,7 +278,7 @@
 
   .dark .ytp-floating-surface {
     background: color-mix(in oklab, var(--ui-bg) 92%, var(--ui-bg-elevated) 8%);
-    box-shadow: 0 1rem 2rem rgb(0 0 0 / 0.3);
+    box-shadow: 0 1rem 2rem rgb(0 0 0 / 0.45);
   }
 
   .dark .ytp-floating-surface [data-slot='item'][data-highlighted]::before,
@@ -327,6 +438,232 @@
   }
 }
 
+/* ==========================================================================
+   Paleta del proyecto — definida en IDEA.md.
+   Día: fondo #F5F0E6, texto #4A3525, secundario #A17855, CTA #FF8F30, acento #6CBF6E
+   Noche: fondo #2B2624, tarjetas #403935, texto #E6DFD5, CTA #F2B134, acento #315935
+   Nuxt UI v4 genera sus tokens dentro de @layer theme, por lo que estos overrides
+   sin capa siempre ganan. Los "ramp" (50..950) se interpolan en OKLab desde las
+   anclas de IDEA.md y alimentan las utilidades (bg-primary, hover:bg-primary-600,
+   text-toned, border-default, etc.).
+   ========================================================================== */
+:root,
+.light {
+  --ui-color-neutral-50: #fbf8f1;
+  --ui-color-neutral-100: #f5f0e6;
+  --ui-color-neutral-200: #e8dfcf;
+  --ui-color-neutral-300: #dccfb8;
+  --ui-color-neutral-400: #bfa386;
+  --ui-color-neutral-500: #a17855;
+  --ui-color-neutral-600: #886446;
+  --ui-color-neutral-700: #6f5038;
+  --ui-color-neutral-800: #5c422e;
+  --ui-color-neutral-900: #4a3525;
+  --ui-color-neutral-950: #2e2118;
+
+  --ui-color-primary-50: #fff6e8;
+  --ui-color-primary-100: #ffecd0;
+  --ui-color-primary-200: #ffd6a3;
+  --ui-color-primary-300: #ffc072;
+  --ui-color-primary-400: #f2b134;
+  --ui-color-primary-500: #ff8f30;
+  --ui-color-primary-600: #e9761a;
+  --ui-color-primary-700: #c36015;
+  --ui-color-primary-800: #9e4c10;
+  --ui-color-primary-900: #7a380b;
+  --ui-color-primary-950: #4a1f05;
+
+  --ui-color-secondary-50: #f7f2ec;
+  --ui-color-secondary-100: #efe6da;
+  --ui-color-secondary-200: #d9c8b4;
+  --ui-color-secondary-300: #c4ab8e;
+  --ui-color-secondary-400: #b39171;
+  --ui-color-secondary-500: #a17855;
+  --ui-color-secondary-600: #846145;
+  --ui-color-secondary-700: #684b36;
+  --ui-color-secondary-800: #4f3929;
+  --ui-color-secondary-900: #37271c;
+  --ui-color-secondary-950: #211711;
+
+  --ui-color-success-50: #f1f8f1;
+  --ui-color-success-100: #e0f0df;
+  --ui-color-success-200: #bde1bc;
+  --ui-color-success-300: #9ad29a;
+  --ui-color-success-400: #84c984;
+  --ui-color-success-500: #6cbf6e;
+  --ui-color-success-600: #549c58;
+  --ui-color-success-700: #3d7a42;
+  --ui-color-success-800: #2e5c32;
+  --ui-color-success-900: #1f4023;
+  --ui-color-success-950: #122814;
+
+  --ui-color-info-50: #f7f2ec;
+  --ui-color-info-100: #efe6da;
+  --ui-color-info-200: #d9c8b4;
+  --ui-color-info-300: #c4ab8e;
+  --ui-color-info-400: #b39171;
+  --ui-color-info-500: #a17855;
+  --ui-color-info-600: #846145;
+  --ui-color-info-700: #684b36;
+  --ui-color-info-800: #4f3929;
+  --ui-color-info-900: #37271c;
+  --ui-color-info-950: #211711;
+
+  --ui-color-warning-50: #fef6e6;
+  --ui-color-warning-100: #fcebcb;
+  --ui-color-warning-200: #f6d59a;
+  --ui-color-warning-300: #f0be64;
+  --ui-color-warning-400: #dda445;
+  --ui-color-warning-500: #c98a1e;
+  --ui-color-warning-600: #a46f17;
+  --ui-color-warning-700: #815610;
+  --ui-color-warning-800: #60400c;
+  --ui-color-warning-900: #412c08;
+  --ui-color-warning-950: #271a05;
+
+  --ui-color-error-50: #fbedea;
+  --ui-color-error-100: #f7dad4;
+  --ui-color-error-200: #edb4a8;
+  --ui-color-error-300: #e08e7c;
+  --ui-color-error-400: #cb6a55;
+  --ui-color-error-500: #b4442c;
+  --ui-color-error-600: #953723;
+  --ui-color-error-700: #782a1b;
+  --ui-color-error-800: #5f2216;
+  --ui-color-error-900: #471a11;
+  --ui-color-error-950: #2c100a;
+
+  /* superficies y texto */
+  --ui-bg: #f5f0e6;
+  --ui-bg-muted: #ede5d7;
+  --ui-bg-elevated: #fbf8f1;
+  --ui-bg-accented: #e4dac7;
+  --ui-bg-inverted: #4a3525;
+  --ui-text-dimmed: #bfa386;
+  --ui-text-muted: #a17855;
+  --ui-text-toned: #886446;
+  --ui-text: #4a3525;
+  --ui-text-highlighted: #2e2118;
+  --ui-text-inverted: #f5f0e6;
+  --ui-border: #dccfb8;
+  --ui-border-muted: #e8dfcf;
+  --ui-border-accented: #c4ab8e;
+  --ui-border-inverted: #4a3525;
+
+  /* color de marca: sobre el CTA naranja el blanco no llega a 4.5:1, el bark sí */
+  --ui-primary: #ff8f30;
+  --ui-secondary: #a17855;
+  --ui-success: #3d7a42;
+  --ui-info: #886446;
+  --ui-warning: #a46f17;
+  --ui-error: #b4442c;
+  --ytp-cta-ink: #2e2118;
+}
+
+.dark {
+  --ui-color-neutral-50: #f3eee6;
+  --ui-color-neutral-100: #e6dfd5;
+  --ui-color-neutral-200: #cbc3b8;
+  --ui-color-neutral-300: #b0a79c;
+  --ui-color-neutral-400: #9d9388;
+  --ui-color-neutral-500: #8a7f75;
+  --ui-color-neutral-600: #645b54;
+  --ui-color-neutral-700: #403935;
+  --ui-color-neutral-800: #352f2c;
+  --ui-color-neutral-900: #2b2624;
+  --ui-color-neutral-950: #1f1b1a;
+
+  --ui-color-secondary-50: #f7f3ee;
+  --ui-color-secondary-100: #efe7dc;
+  --ui-color-secondary-200: #dbcdbb;
+  --ui-color-secondary-300: #c8b49b;
+  --ui-color-secondary-400: #b29c81;
+  --ui-color-secondary-500: #9c8468;
+  --ui-color-secondary-600: #7e6a53;
+  --ui-color-secondary-700: #61513f;
+  --ui-color-secondary-800: #483c2f;
+  --ui-color-secondary-900: #312820;
+  --ui-color-secondary-950: #1d1713;
+
+  --ui-color-success-50: #f2f8f1;
+  --ui-color-success-100: #e2f0e1;
+  --ui-color-success-200: #c1e2bf;
+  --ui-color-success-300: #9fd39e;
+  --ui-color-success-400: #7fbc80;
+  --ui-color-success-500: #5fa663;
+  --ui-color-success-600: #477e4b;
+  --ui-color-success-700: #315935;
+  --ui-color-success-800: #254329;
+  --ui-color-success-900: #1a2f1d;
+  --ui-color-success-950: #0f1c11;
+
+  --ui-color-info-50: #f7f3ee;
+  --ui-color-info-100: #efe7dc;
+  --ui-color-info-200: #dbcdbb;
+  --ui-color-info-300: #c8b49b;
+  --ui-color-info-400: #b29c81;
+  --ui-color-info-500: #9c8468;
+  --ui-color-info-600: #7e6a53;
+  --ui-color-info-700: #61513f;
+  --ui-color-info-800: #483c2f;
+  --ui-color-info-900: #312820;
+  --ui-color-info-950: #1d1713;
+
+  --ui-color-warning-50: #fef7ea;
+  --ui-color-warning-100: #fdedd0;
+  --ui-color-warning-200: #fadba3;
+  --ui-color-warning-300: #f6c973;
+  --ui-color-warning-400: #e5af4f;
+  --ui-color-warning-500: #d4951f;
+  --ui-color-warning-600: #ab7718;
+  --ui-color-warning-700: #835a11;
+  --ui-color-warning-800: #60420d;
+  --ui-color-warning-900: #3f2c08;
+  --ui-color-warning-950: #251a05;
+
+  --ui-color-error-50: #fdf0ec;
+  --ui-color-error-100: #fadfd8;
+  --ui-color-error-200: #f3bcab;
+  --ui-color-error-300: #e9987f;
+  --ui-color-error-400: #da755d;
+  --ui-color-error-500: #c9503a;
+  --ui-color-error-600: #a33f2d;
+  --ui-color-error-700: #7e2f21;
+  --ui-color-error-800: #5e2318;
+  --ui-color-error-900: #3f1810;
+  --ui-color-error-950: #260e09;
+
+  /* superficies y texto */
+  --ui-bg: #2b2624;
+  --ui-bg-muted: #332e2b;
+  --ui-bg-elevated: #403935;
+  --ui-bg-accented: #4a423d;
+  --ui-bg-inverted: #e6dfd5;
+  --ui-text-dimmed: #8a7f75;
+  --ui-text-muted: #9d9388;
+  --ui-text-toned: #b0a79c;
+  --ui-text: #e6dfd5;
+  --ui-text-highlighted: #f3eee6;
+  --ui-text-inverted: #2b2624;
+  --ui-border: #3e3733;
+  --ui-border-muted: #332e2b;
+  --ui-border-accented: #4c443e;
+  --ui-border-inverted: #e6dfd5;
+
+  --ui-primary: #f2b134;
+  --ui-secondary: #b29c81;
+  --ui-success: #7fbc80;
+  --ui-info: #b29c81;
+  --ui-warning: #e5af4f;
+  --ui-error: #da755d;
+  --ytp-cta-ink: #2b2624;
+
+  /* el grueso del contraste del modo noche lo da la propia paleta */
+  --ytp-border-strong: var(--ui-border);
+  --ytp-surface-border-soft: color-mix(in oklab, var(--ui-border) 70%, transparent);
+  --ytp-surface-border-solid: var(--ui-border);
+}
+
 :root {
   --ui-radius: 0.5rem;
   --ui-container: 96rem;
@@ -334,12 +671,6 @@
   --ytp-border-strong: var(--ui-border-accented);
   --ytp-surface-border-soft: var(--ui-border-accented);
   --ytp-surface-border-solid: var(--ui-border-accented);
-}
-
-.dark {
-  --ytp-border-strong: var(--ui-border);
-  --ytp-surface-border-soft: color-mix(in oklab, var(--ui-border) 70%, transparent);
-  --ytp-surface-border-solid: var(--ui-border);
 }
 
 html:not(.no-page-anim) .page-enter-active {
@@ -360,4 +691,21 @@ html:not(.no-page-anim) .page-leave-to {
 code {
   direction: ltr;
   unicode-bidi: bidi-override;
+}
+
+/* Patrón de fondo del sitio (uno por modo claro/oscuro). Va sobre el <html> con
+   !important para ganarle al background inline que AppRoot le pone al cargar el
+   "random background" de YTPTube (ese sigue funcionando, pero queda tapado). Se
+   repite en mosaico cuando la resolución supera el tamaño de la imagen. */
+html {
+  background-color: #f5f0e6 !important;
+  background-image: url('/images/pattern-day.jpg') !important;
+  background-repeat: repeat !important;
+  background-position: top left !important;
+  background-size: 260px auto !important;
+}
+
+.dark html {
+  background-color: #2b2624 !important;
+  background-image: url('/images/pattern-night.jpg') !important;
 }
