@@ -1,6 +1,6 @@
-<img src="ui/public/images/hero-day.png" alt="Fetch Media" width="180" align="right" />
-
 # Fetch Media
+
+<img src="ui/public/images/hero-day.png" alt="Fetch Media mascot" width="180" align="right" />
 
 **Fetch Media** is a self-hosted download manager for your own network — a custom fork of
 [YTPTube](https://github.com/arabcoders/ytptube) that adds a friendlier layer of personalisation on top, and gives
@@ -41,6 +41,34 @@ The UI was rebuilt rather than reskinned. The main differences from upstream:
 
 The rest of the surface (tasks, conditions, notifications, logs, console, presets, API, browser extension) behaves
 as documented upstream.
+
+## Screenshots
+
+All three are the day palette; the night palette swaps in on the same layout.
+
+### Simple mode — the default view
+
+![Fetch Media — Simple mode, the default view](hero/public/fetch-media.png)
+
+The landing page asks one question — *what do you want to download?* — and answers it with one link field plus a
+preset picker whose descriptions are written in plain language instead of raw yt-dlp flags.
+
+### Advanced — the full workspace
+
+![Fetch Media — Advanced mode, the full workspace](hero/public/fetch-media-advanced.png)
+
+Everything upstream ships, one mode switch away: the live queue with pause/resume state, history, files, tasks,
+conditions, presets, notifications, logs and the console. It also has its own URL, `/advanced`.
+
+### Queue feedback — *Preparing*
+
+![Fetch Media — the Preparing state and a ghost card in the queue](hero/public/loading.png)
+
+Enqueueing shows the *Preparing* state and a ghost card in the queue, so a download that finishes in a second still
+visibly entered the queue. The notification badge only ever counts what you have not read yet.
+
+The interface ships in English, Español, العربية, Français, 日本語 and 中文 — see the
+[language FAQ](FAQ.md#how-do-i-change-the-ui-language).
 
 ## Getting started
 
@@ -170,18 +198,6 @@ YTPTube's automation tools can be used separately or together:
 - **Conditions** optionally inspect metadata returned by yt-dlp and apply matching options.
 
 See [Features](docs/features.md) for the full workflow.
-
-## Screenshots
-
-Standard interface:
-
-![Standard interface](https://raw.githubusercontent.com/ArabCoders/ytptube/dev/sc_short.jpg)
-
-Simple mode:
-
-![Simple mode](https://raw.githubusercontent.com/ArabCoders/ytptube/dev/sc_simple.jpg)
-
-The interface is available in English, العربية, Français, 中文, and 日本語. See the [language FAQ](FAQ.md#how-do-i-change-the-ui-language).
 
 ## What It Handles
 

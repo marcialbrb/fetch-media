@@ -61,8 +61,10 @@ test_impl.py
 /.dev-mock
 
 # Brand source material: the runtime copies live in ui/public/images/, so the
-# working files do not need to ship. Remove this line to version them.
-/hero
+# working files do not need to ship. hero/public/ is the exception — those are
+# the screenshots linked from README.md, so that folder is re-included.
+/hero/*
+!/hero/public/
 
 # Secrets and local environment. `docker compose` reads ./.env, so keep it out of
 # the repo; commit a .env.example instead.
