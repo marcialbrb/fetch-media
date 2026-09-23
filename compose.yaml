@@ -1,6 +1,11 @@
 services:
   ytptube:
-    image: ghcr.io/arabcoders/ytptube:latest
+    # Build local desde este repo (frontend custom en ./ui) en vez de la imagen de ArabCoders.
+    build:
+      context: .
+      args:
+        TZ: "${TZ:-UTC}"
+    image: fetch-media:dev
     container_name: ytptube
     restart: unless-stopped
     user: "${UID:-1000}:${GID:-1000}"
@@ -12,7 +17,8 @@ services:
       YTP_BROWSER_URL: http://127.0.0.1:9222
       YTP_FLARESOLVERR_URL: http://flaresolverr:8191/v1
     ports:
-      - "8081:8081"
+      # Puerto del host configurable desde .env (HOST_PORT). Interno siempre 8081.
+      - "${HOST_PORT:-8081}:8081"
     volumes:
       - ./config:/config:rw
       - ./downloads:/downloads:rw
@@ -32,8 +38,11 @@ services:
     container_name: chrome
     restart: unless-stopped
     ## Uncomment the port to enable VNC access to the browser if needed.
+    ## Mantenerlo atado a 127.0.0.1 (no exponer a la LAN).
     #ports:
     #  - "127.0.0.1:5800:5800"
+    ## Si Chromium se cierra/crashea por memoria compartida, descomentar:
+    #shm_size: "1g"
     environment:
       CHROMIUM_REMOTE_DEBUGGING: "1"
       KEEP_APP_RUNNING: "1"
@@ -43,16 +52,16 @@ services:
   # Proxy to forward the Chrome CDP port from the Chrome container to the ytptube container.
   # Chrome blocks Host: headers from other containers, so this proxy is needed to allow ytptube to connect to Chrome.
   chrome-cdp-proxy:
-      image: docker.io/alpine/socat:latest
-      container_name: chrome-cdp-proxy
-      restart: unless-stopped
-      network_mode: "service:ytptube"
-      depends_on:
-        - ytptube
-        - chrome
-      command:
-        - TCP-LISTEN:9222,fork,reuseaddr
-        - TCP:chrome:9222
+    image: docker.io/alpine/socat:latest
+    container_name: chrome-cdp-proxy
+    restart: unless-stopped
+    network_mode: "service:ytptube"
+    depends_on:
+      - ytptube
+      - chrome
+    command:
+      - TCP-LISTEN:9222,fork,reuseaddr
+      - TCP:chrome:9222
 
   flaresolverr:
     image: docker.io/flaresolverr/flaresolverr:latest

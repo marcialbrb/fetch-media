@@ -8,7 +8,12 @@ ui/.nuxt
 ui/.output
 ui/node_modules
 ui/dist
+ui/.env
+ui/.nuxt
+ui/exported
 webext/
+config
+downloads
 **/.env
 ./var/*
 !./var/.gitignore
