@@ -31,6 +31,8 @@ if [ ! -w "${YTP_CONFIG_PATH}" ]; then
   exit 1
 fi
 
+# Create the downloads directory if missing (runs as the container user)
+mkdir -p "${YTP_DOWNLOAD_PATH}" 2>/dev/null || true
 if [ "${YTP_DOWNLOAD_PATH}" != "/" ] && [ ! -w "${YTP_DOWNLOAD_PATH}" ]; then
   CH_USER=$(stat -c "%u" "${YTP_DOWNLOAD_PATH}")
   CH_GRP=$(stat -c "%g" "${YTP_DOWNLOAD_PATH}")
