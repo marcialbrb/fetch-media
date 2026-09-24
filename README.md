@@ -20,6 +20,8 @@ generation, the HTTP API) and reworks how it feels to use day to day:
 - **Mobile-first responsiveness.** Both views are audited down to 320 px, with their own breakpoints.
 - **A tidier queue.** Ghost cards while an item enters the queue, live pause/resume state, and notifications whose
   badge only ever counts what you have not read.
+- **Sensible defaults for small hosts.** One download at a time, files deleted from disk when you remove them from
+  History, and a downloads folder that creates itself — see [Deployment notes](#deployment-notes).
 
 > [!NOTE]
 > This is an independent custom version. It is not affiliated with, nor endorsed by, the YTPTube maintainer.
@@ -27,7 +29,8 @@ generation, the HTTP API) and reworks how it feels to use day to day:
 
 ## What this fork changes
 
-The UI was rebuilt rather than reskinned. The main differences from upstream:
+The UI was rebuilt rather than reskinned, and the deployment defaults were tuned for small self-hosted machines.
+The main differences from upstream:
 
 | Area | What changed |
 | --- | --- |
@@ -38,6 +41,9 @@ The UI was rebuilt rather than reskinned. The main differences from upstream:
 | Feedback | Enqueueing shows a *Preparing…* hint plus a ghost card in the queue, so a download that finishes in a second still visibly entered the queue. |
 | Theming | Day/night palettes as CSS tokens, pattern backgrounds, and `solid`/`duotone` icons unified across components. |
 | Sharing | The per-item "share link" popover is disabled (it deformed the actions column on narrow layouts). |
+| Downloads folder | Defaults to `downloads/fetchmedia` (`YTP_DOWNLOAD_PATH=/downloads/fetchmedia`). `container/entrypoint.sh` creates it on start instead of exiting when it is missing. |
+| First-run setup | `setup.sh` and `.env.example` prepare `.env`, `config/` and `downloads/` in one command (and fix their ownership when run as root). |
+| Concurrency and cleanup | `compose.yaml` sets `YTP_MAX_WORKERS=1`, `YTP_MAX_WORKERS_PER_EXTRACTOR=1` and `YTP_REMOVE_FILES=true`, all overridable from `.env`. |
 
 The rest of the surface (tasks, conditions, notifications, logs, console, presets, API, browser extension) behaves
 as documented upstream.
@@ -84,15 +90,23 @@ The interface ships in English, Español, العربية, Français, 日本語 a
 ```bash
 git clone https://github.com/marcialbrb/fetch-media.git
 cd fetch-media
-mkdir -p ./{config,downloads/{files,tmp}}
+bash setup.sh          # creates .env from .env.example, plus ./config and ./downloads
 docker compose up -d --build
 ```
+
+`setup.sh` is safe to re-run: it never overwrites an existing `.env`. Review `.env` afterwards (user/group IDs, timezone,
+host port and the limits described in [Configuration](#configuration)).
 
 Open `http://localhost:8081` and create the first local account. The container runs with your user and group IDs so
 downloaded files stay accessible from the host.
 
 State that must survive restarts lives in `./config` (settings database, logs, archives); downloads go to
-`./downloads/files` and `./downloads/tmp` is scratch space.
+`./downloads/fetchmedia` and `./downloads/tmp` is scratch space.
+
+> [!TIP]
+> If you skip `setup.sh` and the host folders do not exist, Docker creates them owned by `root`, and the container
+> (which runs as your user) cannot write to them. Create them yourself with `mkdir -p config downloads` before the
+> first start, or run `setup.sh`.
 
 > [!IMPORTANT]
 > Do not expose the instance to an untrusted network without authentication. Authenticated users are instance
@@ -118,10 +132,16 @@ changed at runtime from the web interface. The ones worth knowing when you first
 | --- | --- |
 | `YTP_SIMPLE_MODE` | `true` by default. Set to `false` to open in the Advanced dashboard. |
 | `YTP_AUTH_USERNAME` / `YTP_AUTH_PASSWORD` | Credentials for non-interactive or shared deployments. |
-| `YTP_DOWNLOAD_PATH` | Where finished media is written (default `/downloads/files`). |
+| `YTP_DOWNLOAD_PATH` | Where finished media is written. This fork's `compose.yaml` sets `/downloads/fetchmedia`. |
 | `YTP_TEMP_PATH` | Scratch directory for partial downloads (default `/downloads/tmp`). |
 | `YTP_CORS_ORIGINS` | Set this if you serve the frontend from a different origin; without it the API answers `403` on cross-origin requests. |
 | `YTP_BGUTIL_ENABLED` | Background artwork fetching; keep it alongside the other flags if you recreate the container. |
+| `YTP_MAX_WORKERS` | Maximum simultaneous downloads. `compose.yaml` sets `1` (upstream default: `20`). |
+| `YTP_MAX_WORKERS_PER_EXTRACTOR` | Maximum simultaneous downloads per site. `compose.yaml` sets `1` (upstream default: `2`). |
+| `YTP_REMOVE_FILES` | Whether removing an item from History also deletes its file from disk. `compose.yaml` sets `true` (upstream default: `false`). |
+
+The three values above are read from `.env` with a default (for example `${YTP_MAX_WORKERS:-1}`), so you can
+override them without editing `compose.yaml`.
 
 The full reference, including presets, output templates, and per-extractor limits, is in the
 [environment variable reference](FAQ.md#environment-variables).
@@ -134,6 +154,66 @@ knowing before you edit that file:
   newer than the stored value — bump that timestamp after editing, or the old copy wins.
 - The seeded **name** is normalised to lowercase with underscores (`Audio Only` becomes `audio_only`), because the
   name doubles as the preset identifier. Use each preset's `description` for the human-facing text.
+
+## Deployment notes
+
+Notes from running Fetch Media on a small always-on machine shared with other services (for example a Docker host
+inside an LXC container or a VM).
+
+### What the stack runs
+
+`docker compose up -d --build` starts four containers:
+
+| Container | Image | Role |
+| --- | --- | --- |
+| `ytptube` | built locally (`fetch-media:dev`) | The app, published on port `8081`. |
+| `chrome` | `jlesage/chromium` | Browser used for extractions that need one. |
+| `chrome-cdp-proxy` | `alpine/socat` | Exposes Chromium's debugging port to the app at `127.0.0.1:9222`. It shares the network namespace of `ytptube`. |
+| `flaresolverr` | `flaresolverr/flaresolverr` | Optional WAF bypass for yt-dlp. |
+
+### Sizing and concurrency
+
+Downloads are not just network transfers: yt-dlp, ffmpeg and the JavaScript challenge solver all use CPU and RAM,
+and they multiply with the number of simultaneous downloads. A container with 2 GB of RAM and 1 vCPU froze after
+queuing an 10-video playlist, with RAM and swap both exhausted. The setup used here is **4 GB of RAM and 2 vCPU with
+`YTP_MAX_WORKERS=1`**, which downloads playlist items one at a time. Raise the limit only after checking
+`docker stats` while a playlist runs.
+
+Videos are downloaded as full video files by default. If you only want the audio, pick an audio-only preset; it is
+also the biggest saver of disk space.
+
+### Folders and permissions
+
+- The container runs as `UID:GID` from `.env` (default `1000:1000`), so `./config` and `./downloads` must belong to
+  that user. `setup.sh` takes care of this when run as root.
+- `container/entrypoint.sh` creates the downloads folder on start if it is missing, then checks that it is writable.
+  It cannot create `./config` or `./downloads` themselves, because those are the bind mounts.
+
+### Updating
+
+```bash
+git pull --ff-only
+docker compose up -d --build
+docker compose ps
+```
+
+The entrypoint is copied into the image at build time, so changes to it only apply after a rebuild.
+
+### Remote access
+
+Keep the instance on your LAN and reach it remotely through a VPN such as Tailscale or WireGuard, rather than
+forwarding the port to the internet (see [Security](#security)).
+
+### Troubleshooting
+
+| Symptom | Cause and fix |
+| --- | --- |
+| `ytptube` restarts in a loop and the log shows `stat: cannot statx '/downloads/...'`. | The downloads folder did not exist and the image predates the entrypoint fix. Update and rebuild (`docker compose up -d --build`). |
+| Removing an item from History leaves the file on disk. | `YTP_REMOVE_FILES` is `false`. This fork's `compose.yaml` sets it to `true`; check it with `docker exec ytptube env \| grep REMOVE_FILES`. |
+| `chrome-cdp-proxy` fails with `cannot join network namespace of container ... is restarting`. | The proxy attaches to `ytptube`'s network and `ytptube` was restarting or recreated. Once `ytptube` is healthy, run `docker compose up -d` again. |
+| A change to `container/entrypoint.sh` or the Dockerfile has no effect. | `docker compose up -d --force-recreate` reuses the existing image. Use `docker compose up -d --build`. |
+| The web UI loads forever and the host is unresponsive. | Usually memory exhaustion from too many simultaneous downloads. Reboot the host or container, keep `YTP_MAX_WORKERS=1` and give it more RAM. |
+| `Permission denied` writing to `config` or `downloads`. | The folders belong to another user. Run `sudo chown -R "$(id -u):$(id -g)" config downloads`, or use `setup.sh`. |
 
 ## Development
 
@@ -237,6 +317,10 @@ See [Media Servers and NFO Maker](docs/features.md#media-servers-and-nfo-maker) 
 The included [`compose.yaml`](compose.yaml) runs YTPTube with the bundled POT provider, Chromium browser extraction, and
 FlareSolverr support. It also contains commented host-specific examples for hardware acceleration and NFS/SMB storage.
 See the [environment variable reference](FAQ.md#environment-variables) for additional application settings.
+
+> [!NOTE]
+> This section is the upstream quick start. For Fetch Media, follow [Run it](#run-it) instead: `setup.sh` prepares
+> the folders this fork's `compose.yaml` expects (`downloads/fetchmedia` rather than `downloads/files`).
 
 Create the directories and start the container:
 
@@ -343,5 +427,5 @@ If you want to support the work financially, please donate to a children's chari
 
 Fetch Media is built on [YTPTube](https://github.com/arabcoders/ytptube) by
 [ArabCoders](https://github.com/ArabCoders), released under the MIT license. All upstream functionality and
-documentation belong to its author; this fork only adds the interface layer described in
-[What this fork changes](#what-this-fork-changes).
+documentation belong to its author; this fork only adds the interface layer and the deployment defaults described
+in [What this fork changes](#what-this-fork-changes).

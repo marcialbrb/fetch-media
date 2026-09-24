@@ -1,8 +1,8 @@
 export default defineAppConfig({
   ui: {
-    // Los nombres de color de acá abajo son sólo el punto de partida: la paleta real
-    // (día/noche) vive en app/assets/css/tailwind.css y sobreescribe los tokens
-    // --ui-color-* y los semánticos (--ui-bg, --ui-text, --ui-primary, ...).
+    // The colour names below are only the starting point: the real palette
+    // (day/night) lives in app/assets/css/tailwind.css and overrides the
+    // --ui-color-* tokens and the semantic ones (--ui-bg, --ui-text, --ui-primary, ...).
     primary: 'orange',
     colors: {
       primary: 'orange',

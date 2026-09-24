@@ -1,6 +1,6 @@
 <template>
   <UPopover :content="{ align: 'end', side: 'bottom', sideOffset: 8 }">
-    <!-- Debajo de 510 px no entra: se pisa con la marca del navbar. Aparece a 510. -->
+    <!-- Below 510 px it does not fit: it collides with the navbar brand. It appears at 510. -->
     <UButton
       class="hidden min-[31.875rem]:inline-flex"
       color="neutral"
@@ -13,7 +13,7 @@
         <UIcon name="i-lucide-bell" class="size-4" />
       </template>
       <template #trailing>
-        <!-- Sólo el número de no leídas; si no hay ninguna, la campana queda limpia. -->
+        <!-- Only the unread count; with none unread the bell stays clean. -->
         <UBadge v-if="store.unreadCount > 0" :color="severityTone" variant="soft" size="sm">
           {{ store.unreadCount }}
         </UBadge>
@@ -50,7 +50,7 @@
                 @click="toggleToasts"
               />
             </UTooltip>
-            <!-- Sólo si hay no leídas: con la bandeja al día no se muestra nada. -->
+            <!-- Only when there are unread ones: with an up-to-date inbox nothing is shown. -->
             <UBadge v-if="store.unreadCount > 0" :color="severityTone" variant="soft" size="sm">
               {{ t('app.notifications.unread', { count: store.unreadCount }) }}
             </UBadge>

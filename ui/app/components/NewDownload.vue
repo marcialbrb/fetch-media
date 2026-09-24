@@ -14,8 +14,8 @@
               </div>
             </template>
             <template #description>
-              <!-- Mientras se encola hay salida visible: antes no había ninguna señal de
-                   que la descarga se estuviera procesando. -->
+              <!-- While queueing there is visible output: there used to be no signal that
+                   the download was being processed. -->
               <span
                 v-if="addInProgress || recentlyQueued"
                 class="inline-flex items-center gap-1.5 text-primary"
@@ -240,9 +240,9 @@
       <div v-if="showAdvanced" class="ytp-card p-4 sm:p-6 space-y-4">
         <div class="space-y-4">
           <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-12">
-            <!-- Cada toggle ocupa 4/12: a 2/12 las etiquetas se cortaban en >=1280
-                 ("Forzar desca…", "Inicio autom…"). Con 4+4+4 la fila se llena y los
-                 campos siguientes bajan solos. -->
+            <!-- Each toggle takes 4/12: at 2/12 the labels were cut at >=1280
+                 ("Force downl…", "Auto start…"). With 4+4+4 the row fills up and the
+                 following fields drop on their own. -->
             <div class="xl:col-span-4">
               <DLInput
                 id="force_download"
@@ -635,8 +635,8 @@ const testResultsClasses = useStorage<string>('modal_text_classes', '');
 
 const addInProgress = ref<boolean>(false);
 
-// El POST de encolado vuelve en milisegundos y los items aparecen en la cola un rato
-// después: sin esto el aviso "Preparando…" no llegaba a verse nunca.
+// The queue POST returns in milliseconds and the items show up in the queue a while
+// later: without this the "Preparing…" notice was never actually visible.
 const recentlyQueued = ref(false);
 let recentlyQueuedTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -645,8 +645,8 @@ watch(addInProgress, (running) => {
     return;
   }
 
-  // Avisa a la página para que muestre la tarjeta fantasma en la cola: hay links que
-  // se descargan tan rápido que si no, no se ve que entraron.
+  // Tells the page to show the ghost card in the queue: some links download so
+  // fast that otherwise you cannot see they got in.
   emitter('queued');
 
   recentlyQueued.value = true;
@@ -837,11 +837,11 @@ const form = useStorage<item_request>('local_config_v1', {
 const presetItems = computed(() => selectItems.value);
 
 /**
- * Todo el formulario vive en localStorage (`local_config_v1`), así que al recargar
- * la página volvían a aparecer la URL y la ruta de descarga que habían quedado
- * escritas sin enviarse. Se limpian al montar: el resto de los ajustes (preset,
- * separador, opciones) sigue recordándose. En `onMounted` y no en el setup para no
- * pisar una URL que llegue por el flujo de "compartir".
+ * The whole form lives in localStorage (`local_config_v1`), so on reload the URL
+ * and the download path that had been typed without submitting came back. They are
+ * cleared on mount: the rest of the settings (preset, separator, options) is still
+ * remembered. In `onMounted` and not in setup so it does not clobber a URL arriving
+ * through the "share" flow.
  */
 onMounted(() => {
   form.value.url = '';

@@ -20,7 +20,7 @@
     min-height: 100dvh;
   }
 
-  /* Titulares con la serif del proyecto (IDEA.md); el cuerpo queda en Noto Sans. */
+  /* Headings use the project serif (IDEA.md); the body stays on Noto Sans. */
   h1,
   h2,
   h3,
@@ -88,9 +88,9 @@
     backdrop-filter: blur(16px);
   }
 
-  /* Fila superior del avanzado: encabezado + cajón de URL + hero.
-     <768 px: el hero arriba del encabezado, chico, y el cajón a todo el ancho.
-     >=768 px: el hero en su propia columna, a la derecha del cajón. */
+  /* Advanced view top row: header + URL card + hero.
+     <768 px: the hero above the header, small, and the card at full width.
+     >=768 px: the hero in its own column, to the right of the card. */
   .ytp-top-row {
     @apply flex flex-col gap-6;
   }
@@ -99,10 +99,10 @@
     @apply flex justify-center;
   }
 
-  /* El hero, por tramos (el crecimiento continuo desde 600 px se veía raro):
-       <768 px  → mascota chica (7.5rem), arriba del cajón.
-       >=768 px → columna fija de 10rem al lado del cajón.
-       >=1280 px → crece con la columna, con tope de 20rem. */
+  /* The hero, in steps (growing continuously from 600 px looked odd):
+       <768 px  → small mascot (7.5rem), above the card.
+       >=768 px → fixed 10rem column beside the card.
+       >=1280 px → grows with the column, capped at 20rem. */
   .ytp-top-hero img {
     width: 100%;
     max-width: 7.5rem;
@@ -118,13 +118,13 @@
   @media (width >= 48rem) {
     .ytp-top-row {
       @apply grid items-start;
-      /* Columna del hero fija: entre 768 y 1280 el pato es una mascota al lado del
-         cajón, no crece con la pantalla (eso era lo que se veía raro). */
+      /* Fixed hero column: between 768 and 1280 the duck is a mascot beside the
+         card, it does not grow with the screen (that was the odd part). */
       grid-template-columns: minmax(0, 1fr) 10rem;
     }
 
-    /* Alineado al cajón y no a toda la fila: así los botones de la cola terminan en
-       el borde derecho del cajón de URL y el hero queda solo en su columna. */
+    /* Aligned to the card and not to the whole row: that way the queue buttons end
+       at the URL card's right edge and the hero is left alone in its column. */
     .ytp-top-header {
       grid-column: 1;
     }
@@ -138,9 +138,9 @@
     .ytp-top-hero {
       grid-column: 2;
       grid-row: 2;
-      /* La fila la dimensiona el cajón y el pato se apoya en el borde inferior. Si el
-         PNG queda más alto que el cajón, la fila crece y las patas se van por debajo:
-         por eso, además de esto, el ancho tiene tope (ver el tramo de 1280). */
+      /* The card sizes the row and the duck rests on its bottom edge. If the
+         PNG ends up taller than the card, the row grows and the feet drop below it:
+         that is why the width is also capped (see the 1280 step). */
       align-self: stretch;
       align-items: end;
     }
@@ -150,20 +150,20 @@
     }
   }
 
-  /* Desde 1280 sobra lugar: el hero vuelve a crecer con la columna, con tope. */
+  /* From 1280 there is room to spare: the hero grows with the column again, capped. */
   @media (width >= 80rem) {
     .ytp-top-row {
       grid-template-columns: minmax(0, 1fr) minmax(11rem, 20%);
     }
 
-    /* Tope de 16rem (~256 px de alto): en XL el cajón queda en ~265 px, así que el
-       pato nunca lo pasa y las patas siguen al ras de su borde inferior. */
+    /* 16rem cap (~256 px tall): on XL the card is ~265 px, so the
+       duck never passes it and the feet stay flush with its bottom edge. */
     .ytp-top-hero img {
       max-width: 16rem;
     }
   }
 
-  /* Barra de la tarjeta fantasma de la cola: recorre el ancho mientras se encola. */
+  /* Queue ghost card bar: sweeps the width while items are being queued. */
   .ytp-pending-bar {
     display: block;
     height: 100%;
@@ -439,12 +439,12 @@
 }
 
 /* ==========================================================================
-   Paleta del proyecto — definida en IDEA.md.
-   Día: fondo #F5F0E6, texto #4A3525, secundario #A17855, CTA #FF8F30, acento #6CBF6E
-   Noche: fondo #2B2624, tarjetas #403935, texto #E6DFD5, CTA #F2B134, acento #315935
-   Nuxt UI v4 genera sus tokens dentro de @layer theme, por lo que estos overrides
-   sin capa siempre ganan. Los "ramp" (50..950) se interpolan en OKLab desde las
-   anclas de IDEA.md y alimentan las utilidades (bg-primary, hover:bg-primary-600,
+   Project palette — defined in IDEA.md.
+   Day: background #F5F0E6, text #4A3525, secondary #A17855, CTA #FF8F30, accent #6CBF6E
+   Night: background #2B2624, cards #403935, text #E6DFD5, CTA #F2B134, accent #315935
+   Nuxt UI v4 generates its tokens inside @layer theme, so these unlayered overrides
+   always win. The ramps (50..950) are interpolated in OKLab from the IDEA.md
+   anchors and feed the utilities (bg-primary, hover:bg-primary-600,
    text-toned, border-default, etc.).
    ========================================================================== */
 :root,
@@ -533,7 +533,7 @@
   --ui-color-error-900: #471a11;
   --ui-color-error-950: #2c100a;
 
-  /* superficies y texto */
+  /* surfaces and text */
   --ui-bg: #f5f0e6;
   --ui-bg-muted: #ede5d7;
   --ui-bg-elevated: #fbf8f1;
@@ -550,7 +550,7 @@
   --ui-border-accented: #c4ab8e;
   --ui-border-inverted: #4a3525;
 
-  /* color de marca: sobre el CTA naranja el blanco no llega a 4.5:1, el bark sí */
+  /* brand colour: white on the orange CTA does not reach 4.5:1, bark does */
   --ui-primary: #ff8f30;
   --ui-secondary: #a17855;
   --ui-success: #3d7a42;
@@ -633,7 +633,7 @@
   --ui-color-error-900: #3f1810;
   --ui-color-error-950: #260e09;
 
-  /* superficies y texto */
+  /* surfaces and text */
   --ui-bg: #2b2624;
   --ui-bg-muted: #332e2b;
   --ui-bg-elevated: #403935;
@@ -658,7 +658,7 @@
   --ui-error: #da755d;
   --ytp-cta-ink: #2b2624;
 
-  /* el grueso del contraste del modo noche lo da la propia paleta */
+  /* most of the night mode contrast comes from the palette itself */
   --ytp-border-strong: var(--ui-border);
   --ytp-surface-border-soft: color-mix(in oklab, var(--ui-border) 70%, transparent);
   --ytp-surface-border-solid: var(--ui-border);
@@ -693,10 +693,10 @@ code {
   unicode-bidi: bidi-override;
 }
 
-/* Patrón de fondo del sitio (uno por modo claro/oscuro). Va sobre el <html> con
-   !important para ganarle al background inline que AppRoot le pone al cargar el
-   "random background" de YTPTube (ese sigue funcionando, pero queda tapado). Se
-   repite en mosaico cuando la resolución supera el tamaño de la imagen. */
+/* Site background pattern (one per light/dark mode). It goes on <html> with
+   !important to beat the inline background AppRoot sets when loading YTPTube's
+   "random background" (that one still works, but stays covered). It tiles in a
+   mosaic when the resolution exceeds the image size. */
 html {
   background-color: #f5f0e6 !important;
   background-image: url('/images/pattern-day.jpg') !important;

@@ -5,7 +5,7 @@ export type Mode = 'default' | 'simple' | 'regular';
 type Pref = boolean | null;
 
 export const MODE_KEY = 'simple_mode';
-// El modo simple vive en la raíz y el avanzado en /advanced.
+// The simple mode lives at the root and the advanced one at /advanced.
 export const SIMPLE_PATH = '/';
 export const ADVANCED_PATH = '/advanced';
 
@@ -119,8 +119,8 @@ export const useMode = (): {
 };
 
 /**
- * Devuelve la URL del otro modo cuando el path actual no corresponde al modo resuelto.
- * `null` significa "dejalo donde está".
+ * Returns the other mode's URL when the current path does not match the resolved mode.
+ * `null` means "leave it where it is".
  */
 export const routeTarget = (path: string, pref: Pref, fallback: boolean): string | null => {
   const current = cleanPath(path);

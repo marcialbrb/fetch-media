@@ -817,6 +817,8 @@
       "backToHome": "ホームに戻る"
     },
     "footer": {
+      "tagline": "Fetch Media — ローカルネットワーク向けのダウンロード。",
+      "repository": "リポジトリ",
       "poweredBy": "Powered by",
       "versionUnknown": "不明"
     },

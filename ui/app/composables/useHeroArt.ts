@@ -1,18 +1,18 @@
 /**
- * Arte del hero (día/noche) compartido por el modo simple y la vista avanzada.
- * Las imágenes viven en public/images/hero-day.png y hero-night.png.
- * Se devuelve con reactive() para que en los templates se use `hero.image` a secas
- * (Vue sólo desenvuelve refs de nivel superior o dentro de objetos reactivos).
+ * Hero art (day/night) shared by the simple mode and the advanced view.
+ * The images live in public/images/hero-day.png and hero-night.png.
+ * It is returned with reactive() so templates can use `hero.image` directly
+ * (Vue only unwraps top-level refs or refs inside reactive objects).
  */
 export const useHeroArt = () => {
   const colorMode = useColorMode();
 
   const mode = computed<'day' | 'night'>(() => (colorMode.value === 'dark' ? 'night' : 'day'));
   const image = computed(() => `/images/hero-${mode.value}.png`);
-  // Nombre de marca, no el `instance_title` del backend (que sigue siendo "YTPTube").
+  // Brand name, not the backend's `instance_title` (which is still "YTPTube").
   const alt = computed(() => 'Fetch Media');
 
-  /** Precarga las dos variantes para que el cambio de tema no parpadee. */
+  /** Preloads both variants so the theme switch does not flicker. */
   const preload = (): void => {
     for (const variant of ['day', 'night']) {
       const art = new Image();

@@ -817,6 +817,8 @@
       "backToHome": "返回首页"
     },
     "footer": {
+      "tagline": "Fetch Media — 为你的本地网络下载媒体。",
+      "repository": "代码仓库",
       "poweredBy": "由",
       "versionUnknown": "未知"
     },

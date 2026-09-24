@@ -512,8 +512,8 @@
                       "
                     />
 
-                    <!-- A la izquierda de Actualizar: limpia el historial (los completados).
-                         Pide confirmación porque no se puede deshacer; no borra archivos. -->
+                    <!-- Left of Refresh: clears the history (the completed ones).
+                         It asks for confirmation because it cannot be undone; it does not delete files. -->
                     <UButton
                       color="error"
                       variant="outline"
@@ -853,10 +853,10 @@ const paused = toRef(configStore, 'paused');
 const resumingQueue = ref(false);
 
 /**
- * Reanuda el pool de descargas pausado desde cualquier vista (/api/system/pause).
- * El estado real lo publica el backend en /api/system/configuration y por WebSocket;
- * acá lo adelantamos para que el banner se vaya al instante y el evento 'resumed'
- * lo confirme. Si falla, el banner queda visible: esa es la señal.
+ * Resumes the download pool paused from any view (/api/system/pause).
+ * The real state is published by the backend in /api/system/configuration and over WebSocket;
+ * here we set it ahead so the banner goes away instantly and the 'resumed'
+ * event confirms it. If it fails, the banner stays visible: that is the signal.
  */
 const resumeQueue = async (): Promise<void> => {
   if (resumingQueue.value) {
@@ -875,7 +875,7 @@ const resumeQueue = async (): Promise<void> => {
     configStore.update('paused', false);
     toast.success(t('queue.queueResumed'), { timeout: 2000 });
   } catch {
-    /* sin toast de error: el banner sigue ahí y el backend manda el estado real. */
+    /* no error toast: the banner stays there and the backend sends the real state. */
   } finally {
     resumingQueue.value = false;
   }
@@ -949,7 +949,7 @@ const showSections = computed(() => hasAnyItems.value || historyIsLoading.value)
 const isFormDisabled = computed(() => addInProgress.value);
 const lightsOut = computed(() => Boolean(videoItem.value && playingNow.value));
 const formContainerClass = computed(() => (showSections.value ? 'is-docked' : 'max-w-2xl'));
-/* Con el hero acoplado el cajón comparte espacio: la barra y el botón se achican. */
+/* With the hero docked the card shares the space: the bar and the button shrink. */
 const downloadButtonClass = computed(() =>
   showSections.value
     ? 'shrink-0 justify-center min-w-0 px-3'
@@ -1485,8 +1485,8 @@ const deleteHistoryItem = async (item: StoreItem): Promise<void> => {
   toast.info(t('simple.removedFromHistory'));
 };
 
-// Limpia el historial completo (los completados). Pide confirmación porque no se puede
-// deshacer; no toca los archivos ya descargados.
+// Clears the whole history (the completed ones). It asks for confirmation because it cannot
+// be undone; it does not touch already downloaded files.
 const clearHistory = async (): Promise<void> => {
   if (false === (await box.confirm(t('history.clearCompletedConfirm')))) {
     return;
@@ -1609,12 +1609,12 @@ watch(
 
 <style scoped>
 .hero-stage {
-  /* --hero-lg: hero del estado vacío (arriba del cajón, centrado).
-     --hero-ratio: fracción del ancho del escenario que ocupa el hero acoplado.
-     --hero-aspect: la inversa (1 / --hero-ratio), para reservar con aspect-ratio
-     la altura del hero desde el borde superior (y no desde el final del cajón).
-     El hero vive FUERA del cajón (PNG con transparencia a la derecha); el cajón
-     sólo envuelve al formulario. */
+  /* --hero-lg: hero for the empty state (above the card, centred).
+     --hero-ratio: fraction of the stage width taken by the docked hero.
+     --hero-aspect: its inverse (1 / --hero-ratio), to reserve with aspect-ratio
+     the hero's height from the top edge (and not from the end of the card).
+     The hero lives OUTSIDE the card (a transparent PNG to the right); the card
+     only wraps the form. */
   --hero-lg: clamp(9rem, 30vh, 17rem);
   --hero-ratio: 0.28;
   --hero-aspect: 3.5714;
@@ -1634,9 +1634,9 @@ watch(
   transition: height 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
-/* Contiene la barra y el botón de tema. Al acoplarse toma la altura del hero
-   (aspect-ratio = 1 / --hero-ratio) y apoya su contenido abajo, así la caja queda
-   a la altura de las patas del ave en vez de flotar arriba con un hueco debajo. */
+/* Holds the bar and the theme button. When docked it takes the hero's height
+   (aspect-ratio = 1 / --hero-ratio) and pins its content to the bottom, so the box
+   ends up level with the bird's feet instead of floating on top with a gap below. */
 .hero-top {
   text-align: center;
 }
@@ -1649,7 +1649,7 @@ watch(
   justify-content: flex-end;
 }
 
-/* El cajón se ajusta al formulario y le deja el 40% de la derecha al hero. */
+/* The card fits the form and leaves the right 40% to the hero. */
 .hero-form {
   transition:
     width 0.45s cubic-bezier(0.22, 0.61, 0.36, 1),
@@ -1674,7 +1674,7 @@ watch(
     opacity 0.28s ease;
 }
 
-/* Estado vacío: el hero vive arriba del cajón, grande y centrado. */
+/* Empty state: the hero lives above the card, big and centred. */
 .hero-art--above {
   top: 0;
   left: 50%;
@@ -1682,7 +1682,7 @@ watch(
   transform: translateX(-50%);
 }
 
-/* Con cola/historial: se corre a la derecha del cajón, por afuera, y crece al 40%. */
+/* With queue/history: it moves to the right of the card, outside it, and grows to 40%. */
 .hero-art--docked {
   top: 0;
   left: calc(100% - 100% * var(--hero-ratio));
@@ -1743,10 +1743,10 @@ watch(
   position: absolute;
 }
 
-/* Mobile angosto (<500px): el ave va arriba centrada y el cajón abajo a todo el
-   ancho. El acoplado en dos columnas se veía diminuto y desalineado, así que a
-   esta resolución se apila como en el estado vacío. Va al final del archivo para
-   ganarle en orden de fuente a las reglas base de .hero-art--docked. */
+/* Narrow mobile (<500px): the bird sits on top centred and the card below at full
+   width. The two-column dock looked tiny and misaligned, so at this resolution it
+   stacks like the empty state. It goes at the end of the file to beat the base
+   .hero-art--docked rules in source order. */
 @media (width < 31.25rem) {
   .hero-reserve-top.is-docked {
     height: calc(var(--hero-lg) + var(--hero-gap));

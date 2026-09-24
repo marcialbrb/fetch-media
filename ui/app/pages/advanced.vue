@@ -1,8 +1,8 @@
 <template>
   <div class="space-y-6">
-    <!-- Fila superior: encabezado, cajón de URL y hero. Por encima de 600 px el hero
-         ocupa su propia columna a la derecha del formulario (como en el modo simple);
-         por debajo pasa arriba de todo. El estado vacío de la cola conserva el suyo. -->
+    <!-- Top row: header, URL card and hero. Above 600 px the hero
+         takes its own column to the right of the form (as in the simple mode);
+         below that it moves above everything. The queue empty state keeps its own. -->
     <div class="ytp-top-row">
       <div class="ytp-page-header ytp-top-header">
         <div class="ytp-page-heading">
@@ -213,9 +213,9 @@
           </div>
         </div>
 
-        <!-- Tarjeta fantasma: al pegar un link se muestra unos segundos arriba de la cola
-             para que se vea que entró, incluso cuando la descarga termina antes de que se
-             note. -->
+        <!-- Ghost card: pasting a link shows it for a few seconds above the queue
+             so you can see it got in, even when the download finishes before you
+             notice. -->
         <div v-if="showPendingCard" class="ytp-card flex items-center gap-3 p-3 sm:gap-4 sm:p-4">
           <span class="size-10 shrink-0 animate-pulse rounded-md bg-elevated" />
 
@@ -1152,8 +1152,8 @@ const toggleMasterSelection = (): void => {
   masterSelectAll.value = true;
 };
 
-// Tarjeta fantasma de la cola: aparece unos segundos al encolar un link, para que se vea
-// que entró incluso cuando la descarga termina antes de que se note.
+// Queue ghost card: shows for a few seconds after queueing a link, so you can see
+// it got in even when the download finishes before it is noticeable.
 const showPendingCard = ref(false);
 let pendingCardTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -1166,14 +1166,14 @@ const onQueued = (): void => {
 };
 
 const resumeDownload = async (): Promise<void> => {
-  // El estado de pausa se fija también acá: el evento por WebSocket no siempre llega,
-  // y el pool reanudaba en el backend mientras la UI seguía mostrando "Reanudar"
-  // (el endpoint contestaba 406 "ya está reanudado" una y otra vez, y el link nuevo
-  // quedaba esperando en la fila).
+  // The paused state is also set here: the WebSocket event does not always arrive,
+  // and the pool resumed on the backend while the UI still showed "Resume"
+  // (the endpoint answered 406 "already resumed" over and over, and the new link
+  // sat waiting in the queue).
   try {
     await request('/api/system/resume', { method: 'POST' });
   } catch {
-    // Un 406 significa justamente que ya estaba reanudado: se sincroniza igual.
+    // A 406 means precisely that it was already resumed: sync anyway.
   }
 
   config.update('paused', false);
@@ -1195,11 +1195,11 @@ const pauseDownload = async (): Promise<void> => {
   try {
     await request('/api/system/pause', { method: 'POST' });
   } catch {
-    // Un 406 significa que ya estaba pausada: se sincroniza igual.
+    // A 406 means it was already paused: sync anyway.
   }
 
-  // Igual que al reanudar: el evento por WebSocket no siempre llega, y sin esto el
-  // botón se quedaba en "Pausar" y el warning volvía a salir en cada clic.
+  // Same as when resuming: the WebSocket event does not always arrive, and without this the
+  // button stayed on "Pause" and the warning popped up again on every click.
   config.update('paused', true);
 };
 
@@ -1296,8 +1296,8 @@ const bulkActionGroups = computed(() => {
   });
 
   if (config.paused) {
-    // Reanudar tiene que respetar la selección: la versión anterior llamaba al resume
-    // global y con un solo video tildado reanudaba toda la cola.
+    // Resume has to respect the selection: the previous version called the global
+    // resume and with a single video ticked it resumed the whole queue.
     groups[0]?.push({
       label: t('common.resume'),
       icon: 'i-lucide-circle-play',

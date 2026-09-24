@@ -21,13 +21,13 @@ try {
         '/api/': {
           target: API_URL,
           changeOrigin: true,
-          // Sólo en desarrollo. El backend responde 403 "Origin is not allowed." a todo
-          // pedido cuyo Origin no coincida con el Host que él ve (app/features/auth/
-          // middleware.py). changeOrigin reescribe el Host a localhost:8081, pero el
-          // Origin sigue siendo el del cliente: localhost:8082 en la PC (pasa) y
-          // 192.168.x.x:8082 en el celular (rechazado). Estos dos headers normalizan
-          // el salto del proxy para cualquier cliente de la LAN.
-          // En producción no hace falta: el backend sirve el frontend y todo es mismo origen.
+          // Development only. The backend answers 403 "Origin is not allowed." to any
+          // request whose Origin does not match the Host it sees (app/features/auth/
+          // middleware.py). changeOrigin rewrites the Host to localhost:8081, but the
+          // Origin stays the client's: localhost:8082 on the PC (passes) and
+          // 192.168.x.x:8082 on the phone (rejected). These two headers normalise the
+          // proxy hop for any LAN client.
+          // Not needed in production: the backend serves the frontend, so everything is same-origin.
           headers: {
             Origin: new URL(API_URL).origin,
             'Sec-Fetch-Site': 'same-origin',
@@ -90,8 +90,8 @@ export default defineNuxtConfig({
   },
   modules: ['./modules/icon-catalog', '@nuxt/ui', '@vueuse/nuxt', '@nuxt/eslint', '@nuxtjs/i18n'],
 
-  // Tipografías del proyecto (IDEA.md): titulares serif, cuerpo Noto Sans.
-  // @nuxt/fonts las baja en build/dev y las self-hostea (el deploy no depende de Google).
+  // Project fonts (IDEA.md): serif headings, Noto Sans body.
+  // @nuxt/fonts downloads them at build/dev time and self-hosts them (the deploy does not depend on Google).
   fonts: {
     families: [
       { name: 'Noto Sans', provider: 'google', weights: [400, 500, 600, 700] },
@@ -177,7 +177,7 @@ export default defineNuxtConfig({
       },
     },
   },
-  // La vieja URL del modo simple sigue funcionando.
+  // The old simple mode URL keeps working.
   routeRules: {
     '/simple': { redirect: '/' },
   },

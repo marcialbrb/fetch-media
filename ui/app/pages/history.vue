@@ -143,8 +143,8 @@
         :title="t('history.loading')"
       />
 
-      <!-- overflow-x-auto y no overflow-hidden: la tabla pide 840 px (min-w-210), así
-           que entre 640 y 900 se cortaba la columna de acciones. Ahora se desplaza. -->
+      <!-- overflow-x-auto and not overflow-hidden: the table asks for 840 px (min-w-210), so
+           between 640 and 900 the actions column got clipped. Now it scrolls. -->
       <div
         v-if="'list' === contentStyle && hasItems"
         class="ytp-table-surface w-full min-w-0 max-w-full overflow-x-auto"
@@ -990,7 +990,7 @@ const show_thumbnail = useStorage<boolean>('show_thumbnail', true);
 const hideThumbnail = useStorage<boolean>('hideThumbnailHistory', false);
 const display_style = useStorage<'grid' | 'list'>('history_display_style', 'grid');
 
-// >= 1280 (xl) para lista: la tabla pide 840 px, así que por debajo sólo cuadrícula.
+// >= 1280 (xl) for the list: the table asks for 840 px, so below that grid only.
 const isWide = useMediaQuery({ query: '(min-width: 1280px)' });
 const bg_enable = useStorage<boolean>('random_bg', true);
 const bg_opacity = useStorage<number>('random_bg_opacity', 0.95);
@@ -1057,8 +1057,8 @@ watch(video_item, (value) => {
   document.querySelector('body')?.setAttribute('style', `opacity: ${value ? 1 : bg_opacity.value}`);
 });
 
-// Compartir link desactivado por ahora: el popover deformaba la columna de "Acciones"
-// en el historial. Para volver a activarlo, devolver `canShare()`.
+// Share link disabled for now: the popover deformed the "Actions" column
+// in the history. To turn it back on, return `canShare()`.
 const canShareUrl = computed(() => false);
 
 watch(embed_url, (value) => {

@@ -10,8 +10,8 @@
       @reload_bg="loadBg(true)"
     />
 
-    <!-- Vive acá adentro, dentro de UApp: un AccountModal montado desde un layout
-         (fuera de UApp) no puede cerrarse. Se abre por el evento 'ytp:open-account'. -->
+    <!-- It lives in here, inside UApp: an AccountModal mounted from a layout
+         (outside UApp) cannot be closed. It is opened by the 'ytp:open-account' event. -->
     <AccountModal v-model:open="accountOpen" />
   </UApp>
 </template>
@@ -128,7 +128,7 @@ const loadOptions = async (): Promise<void> => {
 onMounted(async () => {
   setMode();
 
-  // La navbar puede vivir fuera de AppRoot (layout): abre las ventanas por evento.
+  // The navbar may live outside AppRoot (layout): it opens the panels through events.
   window.addEventListener('ytp:open-settings', open);
   window.addEventListener('ytp:open-account', openAccount);
 

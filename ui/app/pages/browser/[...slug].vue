@@ -169,8 +169,8 @@
       class="w-full min-w-0 max-w-full overflow-hidden ytp-table-surface"
     >
       <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
-        <!-- w-full + table-fixed en lugar de min-w-360 (1440 px): así la columna NOMBRE
-             se recorta y no aparece barra horizontal en toda la tabla. -->
+        <!-- w-full + table-fixed instead of min-w-360 (1440 px): this way the NAME column
+             truncates and no horizontal bar appears across the table. -->
         <table class="w-full table-fixed text-sm">
           <thead class="bg-elevated/60 text-xs uppercase tracking-wide text-toned">
             <tr
@@ -361,8 +361,8 @@
           </div>
         </div>
 
-        <!-- pt-3 y no pt-0: con pt-0 el borde inferior de la fila del nombre quedaba
-             pegado a las cajas de tipo/peso/tiempo. -->
+        <!-- pt-3 and not pt-0: with pt-0 the bottom border of the name row sat
+             flush against the type/size/time boxes. -->
         <div class="flex flex-1 flex-col gap-4 p-4 pt-3">
           <div class="flex flex-wrap gap-2 text-sm *:min-w-32 *:flex-1">
             <div
@@ -546,7 +546,7 @@ const browser = useBrowser();
 
 const display_style = useStorage<string>('browser_display_style', 'list');
 
-// >= 1280 (xl) para lista: la tabla pide 1440 px, así que por debajo sólo cuadrícula.
+// >= 1280 (xl) for the list: the table asks for 1440 px, so below that grid only.
 const isWide = useMediaQuery({ query: '(min-width: 1280px)' });
 const relativeTime = (value: RelativeTimeInput): string => formatRelativeTime(value, locale.value);
 const show_filter = ref(false);

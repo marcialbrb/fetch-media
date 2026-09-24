@@ -49,8 +49,8 @@
             :ui="dashboardSidebarUi"
           >
             <template #header>
-              <!-- Plegado + estado de la conexión. El estado se ve sólo con el cajón
-                   abierto: contraído no entra, y no es un dato esencial. -->
+              <!-- Collapse + connection status. The status is only visible with the sidebar
+                   open: collapsed it does not fit, and it is not essential information. -->
               <div class="flex w-full items-center gap-3">
                 <UDashboardSidebarCollapse />
 
@@ -103,22 +103,22 @@
               <UDashboardNavbar :toggle="false" :title="pageTitle" :ui="dashboardNavbarUi">
                 <template #left>
                   <div class="flex items-center gap-2">
-                    <!-- Menú del sidebar en mobile. El plegado de escritorio vive dentro
-                         del cajón del sidebar (slot #footer), donde además cambia el icono. -->
+                    <!-- Mobile sidebar menu. The desktop collapse lives inside the sidebar
+                         card (#header slot), where it also swaps its icon. -->
                     <UDashboardSidebarToggle class="lg:hidden" />
 
-                    <!-- Acá iba un botón con el icono para volver al inicio: se quitó porque
-                         la marca de al lado ya es un enlace al inicio y quedaban dos iconos
-                         iguales (visible sobre todo al llegar a 1023 px). -->
+                    <!-- A button with the icon to go home used to live here: it was removed because
+                         the brand next to it already links home and there were two identical
+                         icons (visible especially when reaching 1023 px). -->
 
-                    <!-- La marca ya es un enlace al inicio del avanzado (AppBrand no se envuelve). -->
+                    <!-- The brand is already a link to the advanced root (AppBrand is not wrapped). -->
                     <AppBrand to="/advanced" />
                   </div>
                 </template>
 
                 <template #right>
                   <div class="flex items-center gap-1 sm:gap-2">
-                    <!-- Reconectar se movió al menú de la cuenta: el navbar queda sólo con iconos. -->
+                    <!-- Reconnect moved into the account menu: the navbar is icons only now. -->
                     <NotifyDropdown />
 
                     <UButton
@@ -142,8 +142,8 @@
 
                     <ThemeButton data-theme-toggle two-state :show-label="false" />
 
-                    <!-- En mobile se oculta: libera ancho para el botón de reconectar
-                         y recargar ya lo hace el propio navegador. -->
+                    <!-- Hidden on mobile: it frees width for the reconnect button
+                         and the browser itself already reloads. -->
                     <UButton
                       color="neutral"
                       variant="ghost"
@@ -358,10 +358,10 @@
                   </footer>
                 </div>
 
-                <!-- Franja al pie de la página, tomando el navbar como referencia:
-                     arranca donde termina el sidebar y no flota como en el modo simple.
-                     El -mb-6 (lg) absorbe el aire que deja el contenedor del panel, así la
-                     franja llega al borde inferior y el rail del sidebar termina en ella. -->
+                <!-- Page footer band, taking the navbar as reference:
+                     it starts where the sidebar ends and does not float like in the simple mode.
+                     The -mb-6 (lg) absorbs the air the panel container leaves, so the
+                     band reaches the bottom edge and the sidebar rail ends on it. -->
                 <AppFooter variant="band" class="mt-auto lg:-mb-6" />
 
                 <Dialog />
@@ -611,25 +611,25 @@ const handleSwipeCancel = (): void => {
 
 const dashboardSidebarUi = computed(() => {
   return {
-    // La vertical vuelve: es la que separa el sidebar de la web.
+    // The vertical one comes back: it is the one separating the sidebar from the site.
     root: 'shell-surface border-e border-default bg-default/95 backdrop-blur-sm',
-    // La cabecera iguala la altura del navbar para que las dos franjas y el borde
-    // inferior queden alineados.
+    // The header matches the navbar's height so both bands and the bottom
+    // border line up.
     header: 'flex h-(--ui-header-height) items-center border-b border-default px-4 lg:px-6',
-    // Poco padding lateral a propósito: en el cajón colapsado (4rem) el pill del ítem
-    // necesita ancho; con px-4 quedaba en 32 px. El header sí mantiene el gutter.
+    // Deliberately little side padding: in the collapsed card (4rem) the item
+    // pill needs width; with px-4 it measured 32 px. The header keeps the gutter.
     body: 'gap-3 px-1.5 py-3',
-    // hidden: el slot #footer está vacío (el plegado vive en el header) y su border-t
-    // dibujaba la línea horizontal del pie del sidebar, la que quedaba desalineada con
-    // la franja del footer.
+    // hidden: the #footer slot is empty (the collapse lives in the header) and its border-t
+    // drew the horizontal rule at the sidebar's bottom, the one that looked
+    // misaligned with the footer band.
     footer: 'hidden',
   };
 });
 
 const dashboardNavbarUi = {
   root: 'border-b border-default bg-transparent px-4 py-3 sm:px-5 lg:px-6',
-  // El título del navbar (en "/" cae al nombre viejo, "YTPTube") se oculta: la página
-  // ya trae su propio encabezado y el navbar queda sólo con iconos.
+  // The navbar title (on "/" it falls back to the old name, "YTPTube") is hidden: the page
+  // already brings its own header and the navbar is icons only.
   title: 'hidden',
   right: 'flex items-center shrink-0 gap-1.5',
 };
@@ -639,14 +639,14 @@ const dashboardPanelUi = {
   body: 'flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-y-visible p-0',
 };
 
-// Estado plegado del sidebar, enlazado al cajón: el header lo usa para mostrar el
-// estado de la conexión sólo con el cajón abierto (el slot #header no recibe `collapsed`,
-// así que se enlaza con v-model y se evita el nombre para no pisar el del slot default).
+// Sidebar collapsed state, bound to the card: the header uses it to show the
+// connection status only with the sidebar open (the #header slot does not receive
+// `collapsed`, so it is bound with v-model under another name to avoid shadowing the default slot's).
 const sidebarCollapsed = ref(false);
 
 const navigationUi = (collapsed: boolean) => ({
   root: 'w-full',
-  // w-full en item y link: colapsado el pill del ítem medía 23 px (un cuadradito).
+  // w-full on item and link: collapsed, the item pill measured 23 px (a small square).
   list: 'w-full gap-1.5',
   item: 'w-full',
   link: collapsed

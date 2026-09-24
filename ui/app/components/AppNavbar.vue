@@ -7,13 +7,13 @@
         <div class="flex min-w-0 items-center gap-2">
           <slot name="left" />
 
-          <!-- La marca ya es un enlace; en este modo apunta al inicio del simple. -->
+          <!-- The brand is already a link; in this mode it points to the simple view root. -->
           <AppBrand to="/" />
         </div>
 
         <div class="flex shrink-0 items-center gap-1 sm:gap-2">
           <div class="nav-mode-switch flex">
-            <!-- Los mismos iconos que el navbar del avanzado (sin las palabras). -->
+            <!-- The same icons as the advanced navbar (without the words). -->
             <ModeSwitch compact />
           </div>
 
@@ -74,7 +74,7 @@ const accountMenu = computed<DropdownMenuItem[][]>(() => {
             label: t('auth.account'),
             icon: 'i-lucide-user-round',
             onSelect: (): void => {
-              // El AccountModal vive en AppRoot (dentro de UApp) y escucha este evento.
+              // The AccountModal lives in AppRoot (inside UApp) and listens for this event.
               window.dispatchEvent(new CustomEvent('ytp:open-account'));
             },
           },
@@ -84,7 +84,7 @@ const accountMenu = computed<DropdownMenuItem[][]>(() => {
       label: t('common.webuiSettings'),
       icon: 'i-lucide-settings-2',
       onSelect: (): void => {
-        // AppRoot (dentro de cada página) es quien tiene el panel de ajustes.
+        // AppRoot (inside each page) is the one holding the settings panel.
         window.dispatchEvent(new CustomEvent('ytp:open-settings'));
       },
     },
@@ -113,7 +113,7 @@ const accountMenu = computed<DropdownMenuItem[][]>(() => {
   z-index: 30;
 }
 
-/* Debajo de 450px el switch estorba: queda sólo la marca con su icono. */
+/* Below 450px the switch gets in the way: only the brand with its icon is left. */
 @media (width < 28.125rem) {
   .nav-mode-switch {
     display: none;

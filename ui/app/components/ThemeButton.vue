@@ -25,7 +25,7 @@ const props = withDefaults(
     square?: boolean;
     showLabel?: boolean;
     labelClass?: string;
-    /** Sólo alterna claro/oscuro (sin estado 'sistema'). */
+    /** Only toggles light/dark (no 'system' state). */
     twoState?: boolean;
   }>(),
   {
@@ -46,7 +46,7 @@ const current = computed<Choice>(() => {
   const pref = color.preference as Choice;
 
   if (props.twoState) {
-    // Sin 'sistema': si la preferencia guardada es 'system', arrancamos del modo resuelto.
+    // No 'system': if the stored preference is 'system', we start from the resolved mode.
     return pref === 'light' || pref === 'dark' ? pref : color.value === 'dark' ? 'dark' : 'light';
   }
 

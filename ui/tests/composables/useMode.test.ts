@@ -37,8 +37,8 @@ describe('useMode', () => {
   });
 
   it('route', () => {
-    // '/' es el modo simple y '/advanced' el avanzado: cada uno redirige al otro sólo si
-    // el modo resuelto no coincide con la URL.
+    // '/' is the simple mode and '/advanced' the advanced one: each one redirects to the other
+    // only when the resolved mode does not match the URL.
     expect(routeTarget('/', null, true)).toBeNull();
     expect(routeTarget('/', null, false)).toBe(ADVANCED_PATH);
     expect(routeTarget(ADVANCED_PATH, null, true)).toBe(SIMPLE_PATH);

@@ -15,4 +15,4 @@ if [ "$(id -u)" -eq 0 ]; then
   chown -R "${uid}:${gid}" config downloads
 fi
 
-echo "Listo. Revisá .env y corré: docker compose up -d --build"
+echo "Done. Check .env and run: docker compose up -d --build"

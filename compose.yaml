@@ -1,6 +1,6 @@
 services:
   ytptube:
-    # Build local desde este repo (frontend custom en ./ui) en vez de la imagen de ArabCoders.
+    # Build locally from this repo (custom frontend in ./ui) instead of the ArabCoders image.
     build:
       context: .
       args:
@@ -20,7 +20,7 @@ services:
       YTP_MAX_WORKERS_PER_EXTRACTOR: ${YTP_MAX_WORKERS_PER_EXTRACTOR:-1}
       YTP_REMOVE_FILES: ${YTP_REMOVE_FILES:-true}
     ports:
-      # Puerto del host configurable desde .env (HOST_PORT). Interno siempre 8081.
+      # Host port configurable from .env (HOST_PORT). Internal is always 8081.
       - "${HOST_PORT:-8081}:8081"
     volumes:
       - ./config:/config:rw
@@ -41,10 +41,10 @@ services:
     container_name: chrome
     restart: unless-stopped
     ## Uncomment the port to enable VNC access to the browser if needed.
-    ## Mantenerlo atado a 127.0.0.1 (no exponer a la LAN).
+    ## Keep it bound to 127.0.0.1 (do not expose it to the LAN).
     #ports:
     #  - "127.0.0.1:5800:5800"
-    ## Si Chromium se cierra/crashea por memoria compartida, descomentar:
+    ## If Chromium closes/crashes because of shared memory, uncomment:
     #shm_size: "1g"
     environment:
       CHROMIUM_REMOTE_DEBUGGING: "1"

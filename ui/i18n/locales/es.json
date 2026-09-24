@@ -817,6 +817,8 @@
       "backToHome": "Volver a Inicio"
     },
     "footer": {
+      "tagline": "Fetch Media — descargas para tu red local.",
+      "repository": "Repositorio",
       "poweredBy": "Impulsado por",
       "versionUnknown": "desconocida"
     },

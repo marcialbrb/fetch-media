@@ -11,8 +11,8 @@
       :aria-label="opt.label"
       @click="select(opt.value)"
     >
-      <!-- En modo compacto (navbar del avanzado) queda sólo el icono; el nombre va en
-           el tooltip y en aria-label. -->
+      <!-- In compact mode (advanced navbar) only the icon is left; the name goes in
+           the tooltip and the aria-label. -->
       <UIcon :name="opt.icon" class="mode-switch__icon size-4" :class="compact ? '' : 'hidden'" />
       <span v-if="!compact">{{ opt.label }}</span>
     </button>
@@ -23,8 +23,8 @@
 import { computed } from 'vue';
 
 /**
- * `compact` = en pantallas chicas muestra sólo los iconos y revela las etiquetas
- * desde `sm`. Sin la prop se comporta igual que siempre (sólo etiquetas).
+ * `compact` = on small screens it shows only the icons and reveals the labels
+ * from `sm` up. Without the prop it behaves as always (labels only).
  */
 defineProps<{ compact?: boolean }>();
 
@@ -32,8 +32,8 @@ const { t } = useI18n();
 const { mode } = useMode();
 const route = useRoute();
 
-// La pestaña activa sigue la ruta (lo que se ve), no la preferencia guardada,
-// así no queda marcado "Avanzado" estando en /.
+// The active tab follows the route (what you see), not the stored preference,
+// so "Advanced" is not highlighted while on /.
 const current = computed<'simple' | 'regular'>(() =>
   cleanPath(route.path) === SIMPLE_PATH ? 'simple' : 'regular',
 );
@@ -52,9 +52,9 @@ const select = (value: 'simple' | 'regular'): void => {
 </script>
 
 <style scoped>
-/* Todo dentro de @layer components: sin capa, este CSS le gana a las utilidades de
-   Tailwind (que van en @layer utilities, declarada después) y rompe clases como
-   `hidden` / `sm:inline-flex` que pasa el navbar para ocultarlo en mobile. */
+/* All inside @layer components: without a layer this CSS beats Tailwind's
+   utilities (which live in @layer utilities, declared later) and breaks classes
+   like `hidden` / `sm:inline-flex` that the navbar passes to hide it on mobile. */
 @layer components {
 .mode-switch {
   display: inline-flex;

@@ -817,6 +817,8 @@
       "backToHome": "العودة للرئيسية"
     },
     "footer": {
+      "tagline": "Fetch Media — تنزيلات لشبكتك المحلية.",
+      "repository": "المستودع",
       "poweredBy": "مدعوم من",
       "versionUnknown": "غير معروف"
     },
