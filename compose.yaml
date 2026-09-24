@@ -13,9 +13,12 @@ services:
       # All envs: https://github.com/arabcoders/ytptube/blob/master/FAQ.md#environment-variables
       TZ: "${TZ:-UTC}"
       YTP_TEMP_PATH: /downloads/tmp
-      YTP_DOWNLOAD_PATH: /downloads/files
+      YTP_DOWNLOAD_PATH: /downloads/fetchmedia
       YTP_BROWSER_URL: http://127.0.0.1:9222
       YTP_FLARESOLVERR_URL: http://flaresolverr:8191/v1
+      YTP_MAX_WORKERS: ${YTP_MAX_WORKERS:-1}
+      YTP_MAX_WORKERS_PER_EXTRACTOR: ${YTP_MAX_WORKERS_PER_EXTRACTOR:-1}
+      YTP_REMOVE_FILES: ${YTP_REMOVE_FILES:-true}
     ports:
       # Puerto del host configurable desde .env (HOST_PORT). Interno siempre 8081.
       - "${HOST_PORT:-8081}:8081"
